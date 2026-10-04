@@ -1,0 +1,169 @@
+name: Autonomous integration gate
+
+on:
+  workflow_run:
+    workflows: ["Independent pull request review"]
+    types: [completed]
+  merge_group:
+    types: [checks_requested]
+  workflow_dispatch:
+    inputs:
+      head_sha:
+        description: Pull request head SHA to re-evaluate
+        required: true
+        type: string
+      pull_number:
+        description: Pull request number
+        required: true
+        type: number
+
+permissions:
+  actions: read
+  attestations: write
+  checks: write
+  contents: read
+  id-token: write
+  issues: read
+  pull-requests: read
+
+concurrency:
+  group: autonomous-integration-${{ github.event.merge_group.head_sha || github.event.workflow_run.pull_requests[0].head.sha || github.event.workflow_run.head_sha || inputs.head_sha }}
+  cancel-in-progress: false
+
+jobs:
+  integrate:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event_name == 'workflow_run' &&
+        github.event.workflow_run.conclusion == 'success'
+      )
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
+      HEAD_SHA: ${{ github.event.workflow_run.pull_requests[0].head.sha || github.event.workflow_run.head_sha || inputs.head_sha }}
+      PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number || inputs.pull_number }}
+      INTEGRATION_SNAPSHOT: .integration/snapshot.json
+      INTEGRATION_RESULT: .integration/policy-result.json
+      SELF_MODIFICATION_RESULT: .integration/self-modification-verdict.json
+    steps:
+      - name: Require the event-producing lifecycle credential
+        shell: bash
+        run: test -n "$GH_TOKEN"
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Install the locked policy toolchain
+        run: npm ci
+      - name: Compile the deterministic policy engine
+        run: npx tsc -b packages/contracts packages/policy-engine --pretty false
+      - name: Collect current pull request policy inputs
+        id: collect
+        run: node scripts/integration/collect.mjs
+      - name: Download evidence for the exact head SHA
+        env:
+          PULL_HEAD_SHA: ${{ env.HEAD_SHA }}
+        run: |
+          set -euo pipefail
+          run_id="$(gh api \
+            "repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs?head_sha=${PULL_HEAD_SHA}&status=completed&per_page=100" \
+            --jq '.workflow_runs[] | select(.conclusion == "success") | .id' |
+            head -n 1)"
+          test -n "$run_id"
+          mkdir -p .integration/evidence
+          gh run download "$run_id" \
+            --name "verification-evidence-${run_id}" \
+            --dir .integration/evidence
+          manifest="$(find .integration/evidence -name manifest.json -type f -print -quit)"
+          test -n "$manifest"
+          echo "EVIDENCE_MANIFEST=$manifest" >> "$GITHUB_ENV"
+      - name: Materialize the candidate without changing live settings
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.HEAD_SHA }}
+          path: .self-modification/candidate
+          persist-credentials: false
+      - name: Evaluate protected factory changes in isolation
+        env:
+          SELF_MODIFICATION_CANDIDATE_ROOT: .self-modification/candidate
+        run: |
+          set -euo pipefail
+          if jq -e 'any(.changedFiles[]; startswith(".github/") or startswith("verification/") or startswith("scripts/") or startswith("packages/policy-engine/") or startswith("infra/"))' "$INTEGRATION_SNAPSHOT" >/dev/null; then
+            SELF_MODIFICATION_CHANGED_FILES="$(jq -r '.changedFiles[]' "$INTEGRATION_SNAPSHOT")" \
+              node scripts/self-modification/evaluate.mjs
+          else
+            echo "No protected factory surfaces changed."
+          fi
+      - name: Evaluate deny-by-default integration policy
+        id: policy
+        run: node scripts/integration/evaluate.mjs
+        continue-on-error: true
+      - name: Publish traceable policy result
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: integration-policy-${{ env.HEAD_SHA }}-${{ github.run_attempt }}
+          path: |
+            .integration/policy-result.json
+            .integration/self-modification-verdict.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Sign the passing policy result with GitHub artifact attestations
+        if: steps.policy.outputs.allowed == 'true'
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a
+        with:
+          subject-path: .integration/*.json
+      - name: Publish the exact-head integration check
+        if: always()
+        env:
+          CHECK_SHA: ${{ env.HEAD_SHA }}
+          CHECK_CONCLUSION: ${{ steps.policy.outputs.allowed == 'true' && 'success' || 'failure' }}
+          CHECK_SUMMARY: ${{ steps.policy.outputs.allowed == 'true' && 'All autonomous integration evidence passed.' || 'Autonomous integration policy denied this exact head SHA.' }}
+          GITHUB_CHECK_TOKEN: ${{ github.token }}
+        run: node scripts/integration/publish-check.mjs
+      - name: Enforce the integration decision
+        if: steps.policy.outputs.allowed != 'true'
+        run: exit 1
+      - name: Enqueue the unchanged pull request
+        if: steps.policy.outputs.allowed == 'true'
+        run: node scripts/integration/merge.mjs
+
+  merge-group:
+    if: github.event_name == 'merge_group'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      checks: write
+      contents: read
+      issues: read
+      pull-requests: read
+    env:
+      MERGE_GROUP_SHA: ${{ github.event.merge_group.head_sha }}
+      MERGE_GROUP_RESULT: .integration/merge-group-result.json
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Revalidate every queued pull request
+        id: validate
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/integration/validate-merge-group.mjs
+      - name: Publish the merge-group integration check
+        if: always()
+        env:
+          CHECK_SHA: ${{ env.MERGE_GROUP_SHA }}
+          CHECK_CONCLUSION: ${{ steps.validate.outcome == 'success' && 'success' || 'failure' }}
+          CHECK_SUMMARY: ${{ steps.validate.outcome == 'success' && 'Every queued pull request retains exact-head evidence and merging lifecycle state.' || 'One or more queued pull requests no longer satisfy autonomous integration policy.' }}
+          CHECK_DETAILS_PATH: ${{ env.MERGE_GROUP_RESULT }}
+          GITHUB_CHECK_TOKEN: ${{ github.token }}
+        run: node scripts/integration/publish-check.mjs
+      - name: Enforce the merge-group decision
+        if: steps.validate.outcome != 'success'
+        run: exit 1

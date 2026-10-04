@@ -1,0 +1,69 @@
+- name: type:goal
+  color: "1D76DB"
+  description: Authorized autonomous outcome contract
+- name: type:incident
+  color: "B60205"
+  description: Autonomous control-plane failure or safety record
+- name: state:submitted
+  color: "D4C5F9"
+  description: Goal received and awaiting deterministic intake
+- name: state:planned
+  color: "C5DEF5"
+  description: Goal decomposed and ready for implementation
+- name: state:implementing
+  color: "0052CC"
+  description: Authorized implementation is active
+- name: state:review
+  color: "FBCA04"
+  description: Implementation awaits independent review
+- name: state:reviewed
+  color: "0E8A16"
+  description: Independent review and required checks passed
+- name: state:merging
+  color: "5319E7"
+  description: Merge is in progress under policy controls
+- name: state:completed
+  color: "0E8A16"
+  description: Goal merged and completion evidence recorded
+- name: state:terminal
+  color: "B60205"
+  description: Goal automation stopped and may not mutate further
+- name: state:reported
+  color: "D93F0B"
+  description: Incident reported and awaiting triage
+- name: state:investigating
+  color: "FBCA04"
+  description: Incident evidence and recovery are being investigated
+- name: state:resolved
+  color: "0E8A16"
+  description: Incident recovery is verified and recorded
+- name: repair:needed
+  color: "E99695"
+  description: Independent review found actionable blocking defects
+- name: repair:exhausted
+  color: "B60205"
+  description: Repair budget is exhausted; terminal evidence required
+- name: autonomy:paused
+  color: "000000"
+  description: Maintainer pause; autonomous mutation is forbidden
+- name: self-modification:safe
+  color: "5319E7"
+  description: Independent review found control-plane self-modification safe
+- name: deployment:compatible
+  color: "0E8A16"
+  description: Deployment-impacting changes are backward-compatible
+- name: deployment:incompatible
+  color: "B60205"
+  description: Deployment-impacting changes are not safe for autonomous merge
+- name: integration:ready
+  color: "0E8A16"
+  description: Signed deterministic integration policy passed for the current head
+- name: risk:low
+  color: "C2E0C6"
+  description: Local and readily reversible change
+- name: risk:medium
+  color: "FEF2C0"
+  description: Cross-component or operationally meaningful change
+- name: risk:high
+  color: "B60205"
+  description: Security, permissions, destructive data, production, or difficult rollback risk

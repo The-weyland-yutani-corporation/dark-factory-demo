@@ -9,10 +9,20 @@ permissions:
   actions: read
 network: defaults
 timeout-minutes: 15
+jobs:
+  lifecycle-credential:
+    runs-on: ubuntu-slim
+    permissions: {}
+    steps:
+      - name: Require event-producing lifecycle credential
+        env:
+          GH_AW_GITHUB_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
+        run: test -n "$GH_AW_GITHUB_TOKEN"
 tools:
   github:
     toolsets: [context, repos, issues, pull_requests, actions]
 safe-outputs:
+  github-token: ${{ secrets.GH_AW_GITHUB_TOKEN }}
   assign-to-agent:
     max: 1
   add-comment:
@@ -40,4 +50,3 @@ Proceed only for a `type:goal` issue whose reconciled state is exactly `state:pl
 5. If assignment is unsafe, conflicting, unauthenticated, or budget-exhausted, make no assignment, reconcile `state:terminal`, and create or update one deduplicated incident.
 
 Do not implement code, review the pull request, merge, deploy, or request human approval.
-

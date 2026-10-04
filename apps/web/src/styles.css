@@ -1,0 +1,285 @@
+:root {
+  color: #f2f4f7;
+  background: #0c111d;
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  font-synthesis: none;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 80% 10%, #1d2939 0, transparent 30rem), #0c111d;
+}
+
+main {
+  width: min(76rem, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 6rem 0;
+}
+
+.masthead {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-bottom: 3rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid #344054;
+}
+
+.eyebrow,
+.label {
+  color: #98a2b3;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0.25rem 0;
+  font-size: clamp(2.5rem, 8vw, 5rem);
+  letter-spacing: -0.05em;
+}
+
+h2 {
+  margin: 0.2rem 0;
+  font-size: 1.5rem;
+}
+
+.subtitle,
+small,
+.section-heading > span,
+footer {
+  color: #98a2b3;
+}
+
+.section-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 1rem;
+}
+
+.dashboard-heading {
+  margin-top: 3rem;
+}
+
+.metric-grid {
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+}
+
+.metric-grid article {
+  min-height: 8rem;
+}
+
+.operations-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.list-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #344054;
+}
+
+.audit-panel {
+  margin-top: 2rem;
+  padding: 2rem;
+  border: 1px solid #344054;
+  border-radius: 0.75rem;
+  background: rgb(16 24 40 / 75%);
+}
+
+.audit-list {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.audit-list article {
+  box-shadow: none;
+}
+
+.audit-list p {
+  margin: 0;
+}
+
+.audit-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.badge {
+  padding: 0.2rem 0.5rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  color: #84adff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.badge.denied,
+.badge.failed {
+  color: #fda29b;
+}
+
+.badge.allowed,
+.badge.succeeded {
+  color: #6ce9a6;
+}
+
+details code {
+  display: block;
+  margin-top: 0.5rem;
+  overflow-wrap: anywhere;
+}
+
+article,
+.notice {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  border: 1px solid #344054;
+  border-radius: 0.75rem;
+  background: rgb(16 24 40 / 75%);
+  box-shadow: 0 1rem 3rem rgb(0 0 0 / 20%);
+}
+
+.signal {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 1rem currentColor;
+}
+
+.value {
+  font-size: 1.75rem;
+}
+
+.good {
+  color: #6ce9a6;
+}
+
+.neutral {
+  color: #84adff;
+}
+
+.bad,
+.error {
+  color: #fda29b;
+}
+
+button {
+  padding: 0.75rem 1rem;
+  border: 1px solid #475467;
+  border-radius: 0.5rem;
+  color: #f2f4f7;
+  background: #1d2939;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+button:hover {
+  border-color: #84adff;
+}
+
+.policy-panel {
+  display: grid;
+  grid-template-columns: 1fr minmax(16rem, 0.55fr);
+  gap: 2rem;
+  margin-top: 2rem;
+  padding: 2rem;
+  border: 1px solid #344054;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, rgb(16 24 40 / 90%), rgb(29 41 57 / 60%));
+}
+
+.decision {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-left: 2rem;
+  border-left: 1px solid #344054;
+}
+
+.decision strong {
+  font-size: 2rem;
+  text-transform: uppercase;
+}
+
+code {
+  color: #b2ccff;
+}
+
+footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 4rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #344054;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 640px) {
+  main {
+    padding: 3rem 0;
+  }
+
+  .masthead,
+  .section-heading,
+  footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .policy-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .operations-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .decision {
+    padding: 1.5rem 0 0;
+    border-top: 1px solid #344054;
+    border-left: 0;
+  }
+}

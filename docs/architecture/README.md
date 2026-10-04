@@ -9,13 +9,13 @@ affect production.
 
 ## Files
 
-| File | Purpose |
-| --- | --- |
+| File                                                                     | Purpose                                                                                                        |
+| ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
 | [`dark-factory-architecture.drawio`](./dark-factory-architecture.drawio) | Editable source (open in [diagrams.net](https://app.diagrams.net) / the draw.io desktop or VS Code extension). |
-| [`dark-factory-architecture.svg`](./dark-factory-architecture.svg) | Rendered, standalone SVG for viewing in GitHub, docs sites, or a browser. |
+| [`dark-factory-architecture.svg`](./dark-factory-architecture.svg)       | Rendered, standalone SVG for viewing in GitHub, docs sites, or a browser.                                      |
 
 Both files are generated from the same layout data so they stay in sync; if you edit one, prefer
-re-deriving the other rather than hand-editing them independently (see *Regenerating* below).
+re-deriving the other rather than hand-editing them independently (see _Regenerating_ below).
 
 ## Diagram conventions
 
@@ -43,7 +43,7 @@ The official [Azure architecture icon set](https://learn.microsoft.com/en-us/azu
 is distributed by Microsoft as a downloadable asset package (not individually hosted files), and
 its usage guidelines prohibit cropping, recoloring, or otherwise altering the icon artwork. To
 avoid redistributing modified copies of Microsoft's trademarked icon files, this diagram instead
-follows the *documented conventions* of that icon set \u2014 solid-color rounded squares, one accent
+follows the _documented conventions_ of that icon set \u2014 solid-color rounded squares, one accent
 color per service category, a simple white glyph, and the service name printed next to the icon
 \u2014 using original, generic glyphs (a generic "box" for compute, a key for Key Vault, a cylinder for
 data stores, a magnifying glass for monitoring/observability services, a person for identity, and
@@ -55,15 +55,15 @@ corporate deck), download the official set from the link above and swap the glyp
 `.drawio` source \u2014 the shapes are plain rectangles so any stencil can be dropped in without
 changing the layout.
 
-| Category | Color | Used for |
-| --- | --- | --- |
-| GitHub (primary) | `#24292F` | Issues, Actions, branch protection/merge queue |
-| GitHub (secondary) | `#57606A` | OIDC federation |
-| Compute | `#0078D4` | Container Registry, Container Apps, revisions/traffic/health |
-| Identity | `#773ADC` | Managed Identities |
-| Security | `#D13438` | Key Vault, incident correlation path |
-| Data | `#00B294` | PostgreSQL Flexible Server, DB migrations |
-| Networking | `#773ADC` | Private Endpoints, Private DNS Zones |
+| Category                | Color     | Used for                                                                                            |
+| ----------------------- | --------- | --------------------------------------------------------------------------------------------------- |
+| GitHub (primary)        | `#24292F` | Issues, Actions, branch protection/merge queue                                                      |
+| GitHub (secondary)      | `#57606A` | OIDC federation                                                                                     |
+| Compute                 | `#0078D4` | Container Registry, Container Apps, revisions/traffic/health                                        |
+| Identity                | `#773ADC` | Managed Identities                                                                                  |
+| Security                | `#D13438` | Key Vault, incident correlation path                                                                |
+| Data                    | `#00B294` | PostgreSQL Flexible Server, DB migrations                                                           |
+| Networking              | `#773ADC` | Private Endpoints, Private DNS Zones                                                                |
 | Operations / monitoring | `#8661C5` | Log Analytics, Application Insights, Azure Monitor, self-modification guardrail, signal correlation |
 
 ## Lifecycle depicted
@@ -87,7 +87,7 @@ changing the layout.
    Monitor + alerts** collect telemetry; a correlation step **deduplicates** alerts, workflow
    signals, and deployment signals into a single **GitHub incident issue**, which **re-enters**
    intake \u2014 closing the loop.
-6. **Self-modification guardrail**: when the factory changes its *own* workflow, the change is
+6. **Self-modification guardrail**: when the factory changes its _own_ workflow, the change is
    first run through **isolated evaluation**, **canonical scenario replay**, and a **signed
    verdict**; only a passing verdict proceeds to a **synthetic canary**, with **automatic
    reversion** on any regression.

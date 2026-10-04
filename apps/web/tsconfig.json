@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "outDir": "dist-types",
+    "rootDir": "src",
+    "tsBuildInfoFile": "dist-types/.tsbuildinfo"
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "references": [{ "path": "../../packages/contracts" }]
+}

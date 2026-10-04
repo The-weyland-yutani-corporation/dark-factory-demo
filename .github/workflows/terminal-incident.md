@@ -10,10 +10,20 @@ permissions:
   checks: read
 network: defaults
 timeout-minutes: 15
+jobs:
+  lifecycle-credential:
+    runs-on: ubuntu-slim
+    permissions: {}
+    steps:
+      - name: Require event-producing lifecycle credential
+        env:
+          GH_AW_GITHUB_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
+        run: test -n "$GH_AW_GITHUB_TOKEN"
 tools:
   github:
     toolsets: [context, repos, issues, pull_requests, actions]
 safe-outputs:
+  github-token: ${{ secrets.GH_AW_GITHUB_TOKEN }}
   create-issue:
     max: 1
   update-issue:
@@ -41,4 +51,3 @@ Proceed only when a `type:goal` issue has newly entered `state:terminal`; otherw
 5. Add one concise correlation comment to the goal. If incident recording fails, report the failure in workflow output and perform no other mutation.
 
 Do not resume work, assign an agent, edit code, review, merge, deploy, close the goal, or request human approval.
-

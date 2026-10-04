@@ -1,0 +1,61 @@
+name: Deterministic verification
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+  merge_group:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verification-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Run deterministic checks and record every outcome
+        run: node scripts/verify-ci.mjs
+      - name: Compile Bicep without installing tools
+        id: bicep
+        continue-on-error: true
+        uses: Azure/bicep-build-action@d2a88e5c7150cd562f3e8b8f361560db2cb4d5c5
+        with:
+          bicepFilePath: infra/main.bicep
+          outputFilePath: reports/bicep/main.json
+      - name: Record Bicep compiler outcome
+        if: always()
+        env:
+          OUTCOME: ${{ steps.bicep.outcome }}
+        run: node scripts/record-action-outcome.mjs bicep-compile "$OUTCOME" Azure/bicep-build-action
+      - name: Enforce evidence policy
+        if: always()
+        run: node scripts/evidence.mjs generate-and-validate
+      - name: Publish verification evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: verification-evidence-${{ github.run_id }}
+          path: |
+            .evidence/
+            coverage/
+            reports/
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Expose evidence on the run summary
+        if: always()
+        run: |
+          echo "## Verification evidence" >> "$GITHUB_STEP_SUMMARY"
+          test -f .evidence/manifest.json && cat .evidence/manifest.json >> "$GITHUB_STEP_SUMMARY" || echo "Manifest unavailable" >> "$GITHUB_STEP_SUMMARY"
