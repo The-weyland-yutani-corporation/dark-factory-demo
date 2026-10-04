@@ -1,0 +1,369 @@
+{
+  "$schema": "./policy.schema.json",
+  "schemaVersion": "1.1.0",
+  "contractVersion": "1.0.0",
+  "issueForms": {
+    "goal": {
+      "path": ".github/ISSUE_TEMPLATE/goal.yml",
+      "typeLabel": "type:goal",
+      "initialState": "state:submitted",
+      "requiredFields": [
+        "goal_key",
+        "outcome",
+        "acceptance",
+        "constraints",
+        "assumptions",
+        "evidence",
+        "rollback",
+        "risk",
+        "budget_profile",
+        "authorization"
+      ]
+    },
+    "incident": {
+      "path": ".github/ISSUE_TEMPLATE/incident.yml",
+      "typeLabel": "type:incident",
+      "initialState": "state:reported",
+      "requiredFields": [
+        "incident_key",
+        "correlation",
+        "phase",
+        "classification",
+        "severity",
+        "impact",
+        "evidence",
+        "attempts",
+        "recovery",
+        "safety"
+      ]
+    }
+  },
+  "labels": {
+    "source": ".github/labels.yml",
+    "exclusiveGroups": {
+      "type": [
+        "type:goal",
+        "type:incident"
+      ],
+      "state": [
+        "state:submitted",
+        "state:planned",
+        "state:implementing",
+        "state:review",
+        "state:reviewed",
+        "state:merging",
+        "state:completed",
+        "state:terminal",
+        "state:reported",
+        "state:investigating",
+        "state:resolved"
+      ],
+      "risk": [
+        "risk:low",
+        "risk:medium",
+        "risk:high"
+      ],
+      "deployment": [
+        "deployment:compatible",
+        "deployment:incompatible"
+      ]
+    },
+    "control": [
+      "repair:needed",
+      "repair:exhausted",
+      "autonomy:paused",
+      "self-modification:safe",
+      "integration:ready"
+    ]
+  },
+  "lifecycle": {
+    "goal": {
+      "initial": "state:submitted",
+      "terminal": [
+        "state:completed",
+        "state:terminal"
+      ],
+      "transitions": [
+        {
+          "from": "state:submitted",
+          "to": "state:planned",
+          "actor": "intake",
+          "guard": "contract-valid-and-safe"
+        },
+        {
+          "from": "state:submitted",
+          "to": "state:terminal",
+          "actor": "intake",
+          "guard": "contract-invalid-or-unsafe"
+        },
+        {
+          "from": "state:planned",
+          "to": "state:implementing",
+          "actor": "implementer",
+          "guard": "budget-reserved"
+        },
+        {
+          "from": "state:planned",
+          "to": "state:terminal",
+          "actor": "orchestrator",
+          "guard": "safe-progress-impossible"
+        },
+        {
+          "from": "state:implementing",
+          "to": "state:review",
+          "actor": "implementer",
+          "guard": "implementation-evidence-complete"
+        },
+        {
+          "from": "state:implementing",
+          "to": "state:terminal",
+          "actor": "orchestrator",
+          "guard": "budget-exhausted-or-unsafe"
+        },
+        {
+          "from": "state:review",
+          "to": "state:reviewed",
+          "actor": "reviewer",
+          "guard": "all-criteria-and-checks-pass"
+        },
+        {
+          "from": "state:review",
+          "to": "state:implementing",
+          "actor": "orchestrator",
+          "guard": "repair-needed-and-budget-available"
+        },
+        {
+          "from": "state:review",
+          "to": "state:terminal",
+          "actor": "orchestrator",
+          "guard": "repair-exhausted-or-blocking-risk"
+        },
+        {
+          "from": "state:reviewed",
+          "to": "state:merging",
+          "actor": "orchestrator",
+          "guard": "head-and-policy-unchanged"
+        },
+        {
+          "from": "state:merging",
+          "to": "state:completed",
+          "actor": "orchestrator",
+          "guard": "merge-and-post-merge-evidence-complete"
+        },
+        {
+          "from": "state:merging",
+          "to": "state:terminal",
+          "actor": "orchestrator",
+          "guard": "merge-failed-or-policy-changed"
+        }
+      ]
+    },
+    "incident": {
+      "initial": "state:reported",
+      "terminal": [
+        "state:resolved"
+      ],
+      "transitions": [
+        {
+          "from": "state:reported",
+          "to": "state:investigating",
+          "actor": "orchestrator",
+          "guard": "owner-and-evidence-recorded"
+        },
+        {
+          "from": "state:investigating",
+          "to": "state:resolved",
+          "actor": "maintainer",
+          "guard": "recovery-and-non-recurrence-evidence-verified"
+        }
+      ]
+    },
+    "invariants": [
+      "exactly-one-type-label",
+      "exactly-one-state-label",
+      "risk-label-matches-or-exceeds-contract",
+      "autonomy-paused-forbids-mutation",
+      "completed-requires-merged-change-and-evidence",
+      "terminal-forbids-further-mutation"
+    ]
+  },
+  "assumptions": {
+    "default": "conservative",
+    "allowed": [
+      "reversible-local-implementation-detail",
+      "existing-tested-repository-convention",
+      "narrowest-scope-compatible-with-acceptance-criteria"
+    ],
+    "requirements": [
+      "record-each-material-assumption-in-pull-request",
+      "cite-repository-evidence",
+      "choose-the-most-reversible-option",
+      "never-expand-goal-scope"
+    ],
+    "forbidden": [
+      "invent-or-expose-secret",
+      "weaken-test-or-policy",
+      "broaden-permission",
+      "destructive-data-change-without-explicit-contract",
+      "production-deployment-without-explicit-contract",
+      "interpret-silence-as-authorization-for-high-risk-scope"
+    ],
+    "onUnresolvedMaterialUncertainty": "stop-mutation-and-create-or-update-incident"
+  },
+  "budgets": {
+    "global": {
+      "maxImplementationAttempts": 1,
+      "maxRepairAttempts": 2,
+      "maxReviewCycles": 3,
+      "maxWorkflowRunsPerGoal": 8,
+      "maxWallClockMinutes": 120
+    },
+    "riskProfiles": {
+      "low": {
+        "maxChangedFiles": 25,
+        "maxChangedLines": 1500,
+        "maxWallClockMinutes": 120
+      },
+      "medium": {
+        "maxChangedFiles": 15,
+        "maxChangedLines": 800,
+        "maxWallClockMinutes": 90
+      },
+      "high": {
+        "maxChangedFiles": 8,
+        "maxChangedLines": 400,
+        "maxWallClockMinutes": 60
+      }
+    },
+    "profiles": {
+      "policy-default": {
+        "multiplier": 1,
+        "mutationAllowed": true
+      },
+      "stricter-half-budget": {
+        "multiplier": 0.5,
+        "mutationAllowed": true
+      },
+      "analysis-only": {
+        "multiplier": 0,
+        "mutationAllowed": false
+      }
+    },
+    "accounting": {
+      "changedLines": "additions-plus-deletions-against-goal-base",
+      "changedFiles": "unique-paths-against-goal-base",
+      "attempt": "a-distinct-mutation-cycle-ending-in-validation",
+      "repairAttempt": "mutation-after-independent-review-finding",
+      "rounding": "floor-with-minimum-one-for-positive-ceilings"
+    },
+    "exhaustionBehavior": "stop-mutation-apply-repair-exhausted-transition-terminal-and-create-or-update-incident"
+  },
+  "idempotency": {
+    "normalization": "trim-lowercase-collapse-nonalphanumeric-to-single-hyphen-strip-edge-hyphens",
+    "goalKeyPattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+    "incidentKeyPattern": "^[a-z0-9]+(?:-[a-z0-9]+)*:[a-z0-9-]+:[a-z0-9-]+$",
+    "contractDigest": "sha256-of-canonical-required-goal-fields",
+    "operationKeyTemplate": "{goalKey}:{phase}:{target}:{contractDigest}",
+    "deduplication": {
+      "goalScope": "repository-plus-normalized-goal-key",
+      "incidentScope": "repository-plus-normalized-incident-key",
+      "pullRequestScope": "repository-plus-goal-key-plus-contract-digest",
+      "searchStates": [
+        "open",
+        "closed",
+        "merged"
+      ],
+      "onEquivalent": "reuse-existing-record-and-append-evidence",
+      "onConflict": "stop-mutation-and-create-or-update-incident"
+    },
+    "sideEffects": [
+      "check-for-recorded-operation-key-before-mutation",
+      "persist-operation-key-and-result-after-success",
+      "retries-must-return-the-recorded-result",
+      "never-create-a-second-open-pull-request-for-the-same-scope",
+      "label-and-comment-updates-must-be-set-reconciliation-not-toggle-operations"
+    ]
+  },
+  "evidence": {
+    "requiredPullRequestSections": [
+      "goal-link",
+      "acceptance-evidence-map",
+      "assumptions",
+      "risk",
+      "budget-consumption",
+      "validation",
+      "rollback",
+      "unresolved-uncertainty"
+    ],
+    "retention": "repository-history-and-linked-check-artifacts",
+    "secretHandling": "sanitize-and-reference-access-controlled-source"
+  },
+  "integration": {
+    "requiredChecks": [
+      "verify",
+      "dependency-security",
+      "codeql",
+      "trivy"
+    ],
+    "reviewedStateLabel": "state:reviewed",
+    "blockingLabels": [
+      "repair:needed",
+      "repair:exhausted",
+      "state:terminal",
+      "autonomy:paused"
+    ],
+    "selfModificationPaths": [
+      ".github",
+      "verification",
+      "scripts",
+      "packages/policy-engine",
+      "infra"
+    ],
+    "selfModificationApprovalLabel": "self-modification:safe",
+    "deploymentPaths": [
+      "Dockerfile",
+      "infra",
+      "scripts/delivery",
+      ".github/workflows/delivery.yml",
+      ".github/workflows/production.yml",
+      ".github/workflows/rollback.yml"
+    ],
+    "deploymentCompatibilityLabel": "deployment:compatible",
+    "deploymentIncompatibilityLabel": "deployment:incompatible",
+    "resultRetentionDays": 30,
+    "selfModificationVerdictRequired": true
+  },
+  "selfModification": {
+    "protectedPaths": [
+      ".github",
+      "verification",
+      "scripts",
+      "packages/policy-engine",
+      "infra"
+    ],
+    "factoryPaths": [
+      ".github/workflows",
+      ".github/autonomy",
+      "scripts/integration",
+      "scripts/self-modification",
+      "scripts/operations",
+      "scripts/delivery",
+      "packages/policy-engine",
+      "verification",
+      "infra"
+    ],
+    "canonicalScenarios": [
+      "successful-feature",
+      "failed-test-repair",
+      "prompt-injection",
+      "workflow-permission-expansion",
+      "failed-deployment",
+      "severe-regression-rollback",
+      "incident-repair",
+      "budget-exhaustion"
+    ],
+    "canaryTimeoutSeconds": 120,
+    "verdictSchemaVersion": 1,
+    "failureBehavior": "revert-canary-and-create-terminal-incident"
+  }
+}

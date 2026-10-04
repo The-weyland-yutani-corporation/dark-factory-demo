@@ -15,18 +15,28 @@ permissions:
   checks: read
 network: defaults
 timeout-minutes: 25
+jobs:
+  lifecycle-credential:
+    runs-on: ubuntu-slim
+    permissions: {}
+    steps:
+      - name: Require event-producing lifecycle credential
+        env:
+          GH_AW_GITHUB_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
+        run: test -n "$GH_AW_GITHUB_TOKEN"
 tools:
   github:
     toolsets: [context, repos, issues, pull_requests, actions]
 safe-outputs:
+  github-token: ${{ secrets.GH_AW_GITHUB_TOKEN }}
   submit-pull-request-review:
     max: 1
   add-comment:
     max: 1
   add-labels:
-    max: 2
+    max: 4
   remove-labels:
-    max: 2
+    max: 4
   create-issue:
     max: 1
   noop:
@@ -42,10 +52,10 @@ Review only a pull request linked to exactly one non-terminal `type:goal` curren
 1. Re-read the goal contract and independently map every acceptance criterion to repository evidence and completed GitHub checks. Use existing deterministic verification and security workflows as evidence; do not rerun or replace CI here.
 2. Verify head SHA, policy digest, assumptions, risk, changed-file/line budget, implementation and repair counts, run count, elapsed time, rollback, idempotency, and required pull request sections.
 3. Treat skipped-required, stale, neutral-required, or failed required checks as not passing. If required checks are still pending, emit a no-op so a completed workflow event can retry review; do not route repair for pending checks. Never accept self-attestation as proof.
-4. If every criterion and required check passes, submit an approving review and reconcile the goal to `state:reviewed`, removing `repair:needed`.
-5. If actionable blocking findings remain and repair budget is available, submit a changes-requested review with precise evidence, reconcile the goal to `state:review`, and add `repair:needed`.
-6. If risk is unsafe, policy changed, or any budget is exhausted, submit a non-approving review, add `repair:exhausted` when applicable, reconcile `state:terminal`, and create or update one deduplicated incident.
+4. Treat changes to `.github`, integration policy/scripts, or the policy engine as control-plane self-modification. Add `self-modification:safe` only after independently proving the change cannot bypass review, evidence, SHA freshness, required checks, or deny-by-default behavior; otherwise route repair or terminal.
+5. For changes to delivery workflows, delivery scripts, infrastructure, or the container contract, prove backward compatibility with the currently deployed revision and retry-safe migration behavior. Reconcile exactly one of `deployment:compatible` or `deployment:incompatible`; incompatible changes may not be approved.
+6. If every criterion and required check passes, submit an approving review and reconcile the goal to `state:reviewed`, removing `repair:needed`. Add the required self-modification and deployment labels only when those evaluations apply.
+7. If actionable blocking findings remain and repair budget is available, submit a changes-requested review with precise evidence, reconcile the goal to `state:review`, and add `repair:needed`.
+8. If risk is unsafe, policy changed, deployment is incompatible, or any budget is exhausted, submit a non-approving review, add `repair:exhausted` when applicable, reconcile `state:terminal`, and create or update one deduplicated incident.
 
 Conclude with exactly one routing decision: `state:reviewed`, `repair:needed`, or `state:terminal`. Do not edit or push code, merge, deploy, or request human approval.
-
-

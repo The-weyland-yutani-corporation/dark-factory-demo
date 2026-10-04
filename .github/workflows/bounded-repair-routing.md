@@ -10,10 +10,20 @@ permissions:
   checks: read
 network: defaults
 timeout-minutes: 15
+jobs:
+  lifecycle-credential:
+    runs-on: ubuntu-slim
+    permissions: {}
+    steps:
+      - name: Require event-producing lifecycle credential
+        env:
+          GH_AW_GITHUB_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
+        run: test -n "$GH_AW_GITHUB_TOKEN"
 tools:
   github:
     toolsets: [context, repos, issues, pull_requests, actions]
 safe-outputs:
+  github-token: ${{ secrets.GH_AW_GITHUB_TOKEN }}
   assign-to-agent:
     max: 1
   add-comment:
@@ -41,4 +51,3 @@ Proceed only for a `type:goal` issue in `state:review` with `repair:needed`, no 
 5. If any budget is exhausted, evidence conflicts, or repair is unsafe, do not assign an agent. Add `repair:exhausted`, remove `repair:needed`, reconcile `state:terminal`, and create or update `<goal-key>:repair:repair-exhausted`.
 
 Do not merge, deploy, or request human approval.
-

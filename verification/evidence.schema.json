@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Dark Factory verification evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "commit", "generatedAt", "checks", "artifacts"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "commit": { "type": "string", "minLength": 1 },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status", "command", "exitCode"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+          "status": { "enum": ["passed", "failed", "skipped"] },
+          "command": { "type": "string" },
+          "exitCode": { "type": "integer" },
+          "reason": { "type": "string" }
+        }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "sha256", "bytes"],
+        "properties": {
+          "path": { "type": "string" },
+          "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "bytes": { "type": "integer", "minimum": 0 }
+        }
+      }
+    }
+  }
+}

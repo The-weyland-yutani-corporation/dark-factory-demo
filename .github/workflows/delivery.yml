@@ -1,0 +1,84 @@
+name: Build immutable delivery image
+
+on:
+  workflow_run:
+    workflows: ["Deterministic verification"]
+    types: [completed]
+    branches: ["main"]
+permissions:
+  contents: read
+  id-token: write
+  deployments: write
+  attestations: write
+
+concurrency:
+  group: production-delivery
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: ${{ vars.DELIVERY_RUNNER || 'ubuntu-24.04' }}
+    timeout-minutes: 30
+    outputs:
+      image_ref: ${{ steps.image.outputs.image_ref }}
+      commit_sha: ${{ steps.source.outputs.commit_sha }}
+    steps:
+      - name: Select verified source
+        id: source
+        env:
+          VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          commit_sha="$VERIFIED_SHA"
+          echo "$commit_sha" | grep -Eq '^[a-fA-F0-9]{40}$'
+          echo "commit_sha=$commit_sha" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ steps.source.outputs.commit_sha }}
+          persist-credentials: false
+      - name: Authenticate to Azure with GitHub OIDC
+        uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Build once and push immutable image
+        id: image
+        env:
+          ACR_NAME: ${{ vars.AZURE_CONTAINER_REGISTRY_NAME }}
+          ACR_LOGIN_SERVER: ${{ vars.AZURE_CONTAINER_REGISTRY_SERVER }}
+          IMAGE_REPOSITORY: ${{ vars.AZURE_IMAGE_REPOSITORY }}
+          COMMIT_SHA: ${{ steps.source.outputs.commit_sha }}
+        run: |
+          set -euo pipefail
+          az acr login --name "$ACR_NAME"
+          tag="sha-${COMMIT_SHA}"
+          tagged_ref="${ACR_LOGIN_SERVER}/${IMAGE_REPOSITORY}:${tag}"
+          docker build \
+            --build-arg "COMMIT_SHA=${COMMIT_SHA}" \
+            --label "org.opencontainers.image.revision=${COMMIT_SHA}" \
+            --tag "$tagged_ref" .
+          docker push "$tagged_ref"
+          digest_ref="$(docker inspect --format='{{index .RepoDigests 0}}' "$tagged_ref")"
+          case "$digest_ref" in
+            *@sha256:*) ;;
+            *) echo "Registry did not return an immutable digest" >&2; exit 1 ;;
+          esac
+          echo "image_ref=$digest_ref" >> "$GITHUB_OUTPUT"
+          echo "subject_name=${digest_ref%@*}" >> "$GITHUB_OUTPUT"
+          echo "subject_digest=${digest_ref#*@}" >> "$GITHUB_OUTPUT"
+      - name: Attest delivery image provenance
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be
+        with:
+          subject-name: ${{ steps.image.outputs.subject_name }}
+          subject-digest: ${{ steps.image.outputs.subject_digest }}
+
+  production:
+    needs: build
+    uses: ./.github/workflows/production.yml
+    with:
+      image_ref: ${{ needs.build.outputs.image_ref }}
+    secrets: inherit

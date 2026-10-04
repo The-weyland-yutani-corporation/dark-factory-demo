@@ -1,0 +1,58 @@
+name: Closed-loop production incident operations
+
+on:
+  repository_dispatch:
+    types: [azure-monitor-alert, container-apps-alert, synthetic-regression]
+  workflow_run:
+    workflows:
+      - Deterministic verification
+      - Build immutable delivery image
+      - Progressive production deployment
+      - Production traffic rollback
+    types: [completed]
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+    inputs:
+      signal_json:
+        description: Sanitized Azure common-alert-schema or synthetic signal JSON
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: write
+  issues: write
+
+concurrency:
+  group: incident-${{ github.event.workflow_run.id || github.event.client_payload.fingerprint || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  admit:
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion != 'success' &&
+       github.event.workflow_run.head_branch == 'main')
+    runs-on: ${{ vars.OPERATIONS_RUNNER || 'ubuntu-24.04' }}
+    timeout-minutes: 10
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      DEFAULT_BRANCH: main
+      PRODUCTION_BASE_URL: ${{ vars.PRODUCTION_BASE_URL }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Materialize manually dispatched signal
+        if: github.event_name == 'workflow_dispatch' && inputs.signal_json != ''
+        env:
+          SIGNAL_JSON: ${{ inputs.signal_json }}
+        run: |
+          node -e "JSON.parse(process.env.SIGNAL_JSON)"
+          printf '%s' "$SIGNAL_JSON" > "$RUNNER_TEMP/incident-event.json"
+          echo "INCIDENT_EVENT_NAME=repository_dispatch" >> "$GITHUB_ENV"
+          echo "INCIDENT_EVENT_PATH=$RUNNER_TEMP/incident-event.json" >> "$GITHUB_ENV"
+      - name: Correlate, deduplicate, and route incident
+        run: node scripts/operations/incident-controller.mjs
+

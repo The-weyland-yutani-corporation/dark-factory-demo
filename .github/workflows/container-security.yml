@@ -1,0 +1,37 @@
+name: Container and IaC security
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+  merge_group:
+  schedule:
+    - cron: "41 5 * * 1"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: container-security-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  trivy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - run: docker build --tag dark-factory:${{ github.sha }} .
+      - name: Scan repository dependencies, secrets, and IaC
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret,misconfig
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+      - name: Scan built container
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          image-ref: dark-factory:${{ github.sha }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"

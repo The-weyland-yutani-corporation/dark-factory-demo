@@ -1,0 +1,110 @@
+name: Progressive production deployment
+
+on:
+  workflow_call:
+    inputs:
+      image_ref:
+        description: Attested ACR image reference pinned by sha256 digest
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      image_ref:
+        description: Existing CI-attested ACR image reference pinned by sha256 digest
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+  deployments: write
+  attestations: read
+
+concurrency:
+  group: production-delivery
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_call' || github.ref == 'refs/heads/main'
+    runs-on: ${{ vars.DELIVERY_RUNNER || 'ubuntu-24.04' }}
+    timeout-minutes: 45
+    env:
+      AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+      AZURE_CONTAINER_APP_NAME: ${{ vars.AZURE_CONTAINER_APP_NAME }}
+      IMAGE_REF: ${{ inputs.image_ref }}
+      ACR_NAME: ${{ vars.AZURE_CONTAINER_REGISTRY_NAME }}
+      ACR_LOGIN_SERVER: ${{ vars.AZURE_CONTAINER_REGISTRY_SERVER }}
+      IMAGE_REPOSITORY: ${{ vars.AZURE_IMAGE_REPOSITORY }}
+      TRAFFIC_STEPS: ${{ vars.PRODUCTION_TRAFFIC_STEPS || '5,25,50,100' }}
+      OBSERVATION_SECONDS: ${{ vars.PRODUCTION_OBSERVATION_SECONDS || '60' }}
+      MIGRATION_JOB_NAME: ${{ vars.AZURE_MIGRATION_JOB_NAME }}
+      MIGRATION_TIMEOUT_SECONDS: ${{ vars.MIGRATION_TIMEOUT_SECONDS || '900' }}
+      DEPLOYMENT_ENVIRONMENT: production
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Authenticate to Azure with GitHub OIDC
+        uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Verify attestation and resolve embedded revision
+        id: artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          expected_prefix="${ACR_LOGIN_SERVER}/${IMAGE_REPOSITORY}@sha256:"
+          case "$IMAGE_REF" in
+            "$expected_prefix"????????????????????????????????????????????????????????????????) ;;
+            *) echo "Image is outside the configured immutable ACR repository" >&2; exit 1 ;;
+          esac
+          az acr login --name "$ACR_NAME"
+          gh attestation verify "oci://${IMAGE_REF}" \
+            --repo "$GITHUB_REPOSITORY" \
+            --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/delivery.yml"
+          node scripts/delivery/resolve-image.mjs
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ steps.artifact.outputs.commit_sha }}
+          persist-credentials: false
+      - name: Re-verify delivery tooling at the resolved commit
+        run: node scripts/delivery/resolve-image.mjs
+      - name: Create GitHub deployment
+        id: deployment
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DEPLOYMENT_REF: ${{ steps.artifact.outputs.commit_sha }}
+          DEPLOYMENT_DESCRIPTION: Deploy ${{ inputs.image_ref }}
+        run: node scripts/delivery/github-deployment.mjs create
+      - name: Mark deployment in progress
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DEPLOYMENT_ID: ${{ steps.deployment.outputs.deployment_id }}
+          DEPLOYMENT_STATE: in_progress
+        run: node scripts/delivery/github-deployment.mjs status
+      - name: Deploy, verify, progressively shift traffic, and observe
+        id: deploy
+        env:
+          COMMIT_SHA: ${{ steps.artifact.outputs.commit_sha }}
+        run: node scripts/delivery/deploy.mjs
+      - name: Mark deployment successful
+        if: success()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DEPLOYMENT_ID: ${{ steps.deployment.outputs.deployment_id }}
+          DEPLOYMENT_STATE: success
+          ENVIRONMENT_URL: ${{ steps.deploy.outputs.environment_url }}
+          DEPLOYMENT_DESCRIPTION: Production is serving ${{ steps.deploy.outputs.revision }}
+        run: node scripts/delivery/github-deployment.mjs status
+      - name: Record failed deployment after automatic rollback
+        if: failure() && steps.deployment.outputs.deployment_id != ''
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DEPLOYMENT_ID: ${{ steps.deployment.outputs.deployment_id }}
+          DEPLOYMENT_STATE: failure
+          DEPLOYMENT_DESCRIPTION: Delivery failed and traffic was rolled back
+        run: node scripts/delivery/github-deployment.mjs status
