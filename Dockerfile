@@ -13,7 +13,22 @@ COPY packages/policy-engine/package.json packages/policy-engine/package.json
 RUN npm ci
 
 COPY . .
-RUN npm run build && npm prune --omit=dev
+RUN npm run build
+
+FROM node:22-bookworm-slim AS production-dependencies
+WORKDIR /app
+
+COPY package.json package-lock.json* ./
+COPY apps/api/package.json apps/api/package.json
+COPY apps/worker/package.json apps/worker/package.json
+COPY packages/contracts/package.json packages/contracts/package.json
+COPY packages/observability/package.json packages/observability/package.json
+COPY packages/policy-engine/package.json packages/policy-engine/package.json
+RUN npm ci \
+    --omit=dev \
+    --workspace=@dark-factory/api \
+    --workspace=@dark-factory/worker \
+    --include-workspace-root
 
 FROM node:22-bookworm-slim AS runtime
 ARG COMMIT_SHA=unknown
@@ -26,8 +41,12 @@ ENV NODE_ENV=production \
     GIT_COMMIT="${COMMIT_SHA}"
 WORKDIR /app
 
+RUN apt-get update \
+    && apt-get upgrade -y \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY --from=build --chown=node:node /app/package.json /app/package-lock.json ./
-COPY --from=build --chown=node:node /app/node_modules ./node_modules
+COPY --from=production-dependencies --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/apps/api/package.json ./apps/api/package.json
 COPY --from=build --chown=node:node /app/apps/api/dist ./apps/api/dist
 COPY --from=build --chown=node:node /app/apps/worker/package.json ./apps/worker/package.json
