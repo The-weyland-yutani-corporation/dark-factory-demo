@@ -3,6 +3,7 @@ on:
   issues:
     types: [labeled]
 permissions:
+  copilot-requests: write
   contents: read
   issues: read
   pull-requests: read
@@ -10,20 +11,13 @@ permissions:
   checks: read
 network: defaults
 timeout-minutes: 15
-jobs:
-  lifecycle-credential:
-    runs-on: ubuntu-slim
-    permissions: {}
-    steps:
-      - name: Require event-producing lifecycle credential
-        env:
-          GH_AW_GITHUB_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
-        run: test -n "$GH_AW_GITHUB_TOKEN"
 tools:
   github:
     toolsets: [context, repos, issues, pull_requests, actions]
 safe-outputs:
-  github-token: ${{ secrets.GH_AW_GITHUB_TOKEN }}
+  github-app:
+    app-id: ${{ vars.DARK_FACTORY_MAGE_APP_ID }}
+    private-key: ${{ secrets.DARK_FACTORY_MAGE_PRIVATE_KEY }}
   assign-to-agent:
     max: 1
   add-comment:

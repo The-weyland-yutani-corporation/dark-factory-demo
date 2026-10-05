@@ -1,5 +1,5 @@
 blank_issues_enabled: false
 contact_links:
   - name: Security vulnerability
-    url: https://github.com/VeVarunSharma/dark-factory-demo/security/advisories/new
+    url: https://github.com/The-weyland-yutani-corporation/dark-factory-demo/security/advisories/new
     about: Report vulnerabilities privately rather than opening a public incident.

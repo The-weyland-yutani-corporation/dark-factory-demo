@@ -37,10 +37,19 @@ jobs:
     runs-on: ${{ vars.OPERATIONS_RUNNER || 'ubuntu-24.04' }}
     timeout-minutes: 10
     env:
-      GITHUB_TOKEN: ${{ github.token }}
       DEFAULT_BRANCH: main
       PRODUCTION_BASE_URL: ${{ vars.PRODUCTION_BASE_URL }}
     steps:
+      - name: Mint repository-scoped incident token
+        id: incident-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ vars.DARK_FACTORY_MAGE_APP_ID }}
+          private-key: ${{ secrets.DARK_FACTORY_MAGE_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-actions: write
+          permission-issues: write
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
@@ -54,5 +63,6 @@ jobs:
           echo "INCIDENT_EVENT_NAME=repository_dispatch" >> "$GITHUB_ENV"
           echo "INCIDENT_EVENT_PATH=$RUNNER_TEMP/incident-event.json" >> "$GITHUB_ENV"
       - name: Correlate, deduplicate, and route incident
+        env:
+          GITHUB_TOKEN: ${{ steps.incident-token.outputs.token }}
         run: node scripts/operations/incident-controller.mjs
-
