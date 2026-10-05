@@ -182,8 +182,11 @@ function passingSelfModificationVerdict(headSha: string) {
     candidateSha: headSha,
     isolatedWorkspace: { liveSettingsMutated: false },
     evidenceCoverage: { passed: true },
-    scenarios: [{ passed: true }],
-    toolChecks: [{ required: true, passed: true }],
+    scenarios: [{ passed: true }, { passed: true }],
+    toolChecks: [
+      { required: true, passed: true },
+      { required: false, passed: true },
+    ],
     canary: { activated: true, reverted: false, terminalIncident: false },
     decision: { allowed: true },
   };
