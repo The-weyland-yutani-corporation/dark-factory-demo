@@ -17,36 +17,116 @@ worker workloads:
   a delegated subnet.
 - Diagnostic settings for platform services and PostgreSQL CPU/storage alerts.
 
-## Deployment inputs
+## Demo deployment inputs
 
-No secret values are accepted. The required PostgreSQL administrator should be
-a Microsoft Entra security group:
+After a pull request passes the exact-head integration and self-modification
+gates, merges through the merge queue, and the resulting `main` commit passes
+deterministic verification, `.github/workflows/infrastructure.yml` deploys the
+fixed `infra/main.bicep` and `infra/main.demo.bicepparam` paths. It authenticates
+with repository-configured Azure OIDC variables, validates and runs what-if,
+rejects deletes and unsupported or replacement-like property changes, and
+applies only in Incremental mode. The workflow has no caller-supplied deployment
+inputs.
+
+Configure `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, and
+`AZURE_RESOURCE_GROUP`. Grant the federated identity only the resource-group
+deployment permissions required by this template, including role-assignment
+writes at that scope for the template's managed-identity bindings. The workflow
+publishes its exact-source verification evidence, validation result, what-if,
+safety verdict, compiled template, and deployment result for 30 days.
+
+The checked-in parameter files contain only non-secret values:
+
+| Stage | Parameter file | Application resources |
+| --- | --- | --- |
+| Base infrastructure | `infra/main.demo.bicepparam` | `deployApplications=false` |
+| Application activation | `infra/main.demo.applications.bicepparam` | `deployApplications=true` |
+
+Both files target subscription
+`ad92e163-a85e-40cc-bb50-054b0b8197a8`, tenant
+`1cf61a60-a877-46a7-86bc-a8f76b6ab441`, resource group
+`rg-dark-factory-demo-eus2`, and location `eastus2`. Subscription and resource
+group are deployment-command scope, so they are intentionally not Bicep
+parameters.
+
+The files configure the `darkfactory` / `demo` naming inputs, PostgreSQL Entra
+administrator `sharmave@MngEnvMCAP744360.onmicrosoft.com`
+(`6ab9e067-26ba-469d-a1de-4b5a1571bd3f`), image repository `dark-factory`,
+non-HA PostgreSQL, and a non-zone-redundant Container Apps environment. The
+demo opts in to authenticated public ACR access for GitHub-hosted runners. ACR
+admin credentials and anonymous pull remain disabled, and the private endpoint
+remains deployed.
+
+Compile the template and every checked-in parameter file without contacting
+Azure:
 
 ```powershell
-az deployment group create `
-  --resource-group <resource-group> `
-  --template-file infra\main.bicep `
-  --parameters namePrefix=darkfactory `
-               environmentName=prod `
-               location=eastus2 `
-               postgresAdministratorObjectId=<entra-group-object-id> `
-               postgresAdministratorPrincipalName=<entra-group-display-name> `
-               imageTag=0.1.0 `
-               alertEmailAddress=<operations-email>
+npm run verify:bicep
 ```
 
-The deployment does not push images. For a new environment, first run the
-deployment with `deployApplications=false`, publish the separate web, API, and
-worker images to the output registry, and run it again with
-`deployApplications=true`. Use immutable image tags in production.
+After approval, the two deployment commands are:
 
-`main.demo.bicepparam` is a non-secret demo template. Replace its Microsoft
-Entra administrator placeholders, then pass it with
-`--parameters infra\main.demo.bicepparam`. It explicitly sets
-`containerRegistryPublicNetworkAccessEnabled=true`, which permits
-identity-authenticated ACR access from GitHub-hosted runners. The ACR admin
-user and anonymous pull remain disabled, and the private endpoint remains
-deployed. Leave the parameter at its default `false` for private environments.
+```powershell
+az account set --subscription ad92e163-a85e-40cc-bb50-054b0b8197a8
+
+az deployment group create `
+  --name darkfactory-demo-bootstrap `
+  --resource-group rg-dark-factory-demo-eus2 `
+  --template-file infra\main.bicep `
+  --parameters infra\main.demo.bicepparam
+
+# Build and push dark-factory:0.1.0 before activating the applications.
+az deployment group create `
+  --name darkfactory-demo-applications `
+  --resource-group rg-dark-factory-demo-eus2 `
+  --template-file infra\main.bicep `
+  --parameters infra\main.demo.applications.bicepparam
+```
+
+Do not run the second stage until the exact `dark-factory:0.1.0` image exists
+in the registry. For later releases, override `imageTag` with the immutable
+release identifier in both the image publication and second-stage deployment.
+
+## Deployment outputs to GitHub variables
+
+After the second stage succeeds, map the Bicep outputs and fixed deployment
+scope to repository variables as follows. These commands are documentation;
+they are not run by parameter validation.
+
+```powershell
+$deployment = az deployment group show `
+  --name darkfactory-demo-applications `
+  --resource-group rg-dark-factory-demo-eus2 `
+  --query properties.outputs | ConvertFrom-Json
+
+$registryServer = $deployment.containerRegistryLoginServer.value
+$registryName = $registryServer.Split('.')[0]
+
+gh variable set AZURE_TENANT_ID --body '1cf61a60-a877-46a7-86bc-a8f76b6ab441'
+gh variable set AZURE_SUBSCRIPTION_ID --body 'ad92e163-a85e-40cc-bb50-054b0b8197a8'
+gh variable set AZURE_RESOURCE_GROUP --body 'rg-dark-factory-demo-eus2'
+gh variable set AZURE_CONTAINER_APP_NAME --body $deployment.applicationName.value
+gh variable set AZURE_CONTAINER_REGISTRY_NAME --body $registryName
+gh variable set AZURE_CONTAINER_REGISTRY_SERVER --body $registryServer
+gh variable set AZURE_IMAGE_REPOSITORY --body 'dark-factory'
+gh variable set DELIVERY_RUNNER --body 'ubuntu-latest'
+gh variable set PRODUCTION_BASE_URL --body $deployment.applicationUrl.value
+```
+
+`AZURE_CLIENT_ID` is not an application deployment output. Set it to the
+`clientId` of the separately approved GitHub OIDC user-assigned identity after
+that identity and its federated credential exist:
+
+```powershell
+$clientId = az identity show `
+  --resource-group rg-dark-factory-demo-eus2 `
+  --name <approved-github-oidc-identity-name> `
+  --query clientId -o tsv
+gh variable set AZURE_CLIENT_ID --body $clientId
+```
+
+No credential, PAT, GitHub App installation token, or other mutable secret
+belongs in a Bicep parameter file or repository variable.
 
 ## Immutable network assumptions
 

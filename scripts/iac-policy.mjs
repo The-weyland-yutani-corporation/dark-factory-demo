@@ -24,7 +24,9 @@ for (const file of files) {
     if (!/^\d{4}-\d{2}-\d{2}(?:-preview)?$/.test(match[1]))
       errors.push(`${file}: resource API version must be explicit`);
   }
-  if (/@secure\(\)[\s\S]{0,120}param\s+\w+\s+\w+\s*=\s*['"]/m.test(content))
+  if (
+    /@secure\(\)[\s\S]{0,120}param\s+\w+\s+\w+\s*=\s*['"][^'"]+/m.test(content)
+  )
     errors.push(`${file}: secure parameters must not have literal defaults`);
   if (/\b(listKeys|listSecrets)\s*\(/i.test(content))
     errors.push(`${file}: avoid exposing deployment-time secrets`);

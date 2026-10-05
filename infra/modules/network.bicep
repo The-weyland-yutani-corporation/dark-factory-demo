@@ -2,6 +2,7 @@ param name string
 param location string
 param vnetAddressPrefix string
 param containerAppsSubnetPrefix string
+param functionsSubnetPrefix string
 param postgresSubnetPrefix string
 param privateEndpointsSubnetPrefix string
 param postgresPrivateDnsZoneName string
@@ -22,6 +23,21 @@ resource vnet 'Microsoft.Network/virtualNetworks@2025-07-01' = {
         name: 'snet-container-apps'
         properties: {
           addressPrefix: containerAppsSubnetPrefix
+          delegations: [
+            {
+              name: 'Microsoft.App.environments'
+              properties: {
+                serviceName: 'Microsoft.App/environments'
+              }
+            }
+          ]
+          privateEndpointNetworkPolicies: 'Disabled'
+        }
+      }
+      {
+        name: 'snet-functions'
+        properties: {
+          addressPrefix: functionsSubnetPrefix
           delegations: [
             {
               name: 'Microsoft.App.environments'
@@ -67,6 +83,11 @@ resource containerAppsSubnet 'Microsoft.Network/virtualNetworks/subnets@2025-07-
 resource postgresSubnet 'Microsoft.Network/virtualNetworks/subnets@2025-07-01' existing = {
   parent: vnet
   name: 'snet-postgresql'
+}
+
+resource functionsSubnet 'Microsoft.Network/virtualNetworks/subnets@2025-07-01' existing = {
+  parent: vnet
+  name: 'snet-functions'
 }
 
 resource privateEndpointsSubnet 'Microsoft.Network/virtualNetworks/subnets@2025-07-01' existing = {
@@ -133,6 +154,7 @@ resource postgresDnsLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@
 
 output vnetId string = vnet.id
 output containerAppsSubnetId string = containerAppsSubnet.id
+output functionsSubnetId string = functionsSubnet.id
 output postgresSubnetId string = postgresSubnet.id
 output privateEndpointsSubnetId string = privateEndpointsSubnet.id
 output acrPrivateDnsZoneId string = acrPrivateDnsZone.id

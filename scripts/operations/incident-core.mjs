@@ -53,12 +53,18 @@ function alertSignal(payload) {
   const target =
     essentials.alertTargetIDs?.[0] ??
     essentials.alertTargetIds?.[0] ??
+    payload.targetResourceIds?.[0] ??
     context.resourceId ??
     payload.resourceId;
   const state = normalizeToken(
     essentials.monitorCondition ?? essentials.condition ?? payload.status,
     "fired",
   );
+  const alertSeverity = essentials.severity ?? payload.severity;
+  const normalizedSeverity =
+    typeof alertSeverity === "object" && alertSeverity !== null
+      ? (alertSeverity.normalized ?? alertSeverity.azure)
+      : alertSeverity;
   return {
     source: "azure-monitor",
     service:
@@ -70,21 +76,25 @@ function alertSignal(payload) {
     classification: normalizeToken(
       payload.classification ??
         essentials.signalType ??
+        payload.signalType ??
         context.conditionType ??
         "monitor-alert",
     ),
     rule:
       essentials.alertRule ??
       essentials.alertRuleName ??
+      payload.rule?.name ??
       payload.alertRule ??
       "azure-monitor",
     resource: target ?? "azure-resource",
-    severity: classifySeverity(essentials.severity ?? payload.severity),
+    severity: classifySeverity(normalizedSeverity),
     status: ["resolved", "deactivated"].includes(state) ? "resolved" : "active",
     commit: payload.commitSha ?? context.commitSha,
-    revision: payload.revision ?? context.revision,
+    revision:
+      payload.containerAppsRevision ?? payload.revision ?? context.revision,
     summary:
       essentials.description ??
+      payload.description ??
       context.description ??
       payload.summary ??
       "Azure Monitor detected a production regression.",
@@ -92,6 +102,8 @@ function alertSignal(payload) {
     observedAt:
       essentials.firedDateTime ??
       essentials.resolvedDateTime ??
+      payload.firedAt ??
+      payload.resolvedAt ??
       payload.observedAt ??
       new Date().toISOString(),
   };

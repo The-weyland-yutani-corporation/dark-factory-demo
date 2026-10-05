@@ -69,8 +69,10 @@ changing the layout.
 ## Lifecycle depicted
 
 1. **Intake & change**: a structured GitHub **Goal Issue** feeds the agentic workflow's
-   **Intake & Planning** step, which runs the **Copilot coding agent**, an **independent review**
-   (separate agent/session), and a **bounded repair** loop for review findings.
+   **Intake & Planning** step. The implementer writes code through an App-authenticated
+   **create-pull-request** safe output; an **independent review** (separate agent/session)
+   evaluates it, and bounded repair uses **push-to-pull-request-branch** only for the one
+   reconciled pull request.
 2. **Verification & merge**: GitHub Actions perform **deterministic verification** and emit
    **SHA-bound evidence**; the **integration policy** (merge queue / auto-merge) then lands the
    change on `main`.

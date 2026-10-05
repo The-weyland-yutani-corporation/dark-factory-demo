@@ -29,6 +29,35 @@ for (const lockFile of lockFiles) {
     /^#[ ]{3}- GH_AW_(?:AGENT_TOKEN|GITHUB_MCP_SERVER_TOKEN|GITHUB_TOKEN)\r?\n/gm,
     "",
   );
+  if (
+    lockContent.includes("assign-to-agent") ||
+    lockContent.includes("assign_to_agent")
+  ) {
+    throw new Error(`${lockFile} contains unsupported assign-to-agent output`);
+  }
+  const codeWritingOutput = lockFile.endsWith(
+    "coding-agent-assignment.lock.yml",
+  )
+    ? "create_pull_request"
+    : lockFile.endsWith("bounded-repair-routing.lock.yml")
+      ? "push_to_pull_request_branch"
+      : undefined;
+  if (codeWritingOutput) {
+    for (const expected of [
+      codeWritingOutput,
+      "DARK_FACTORY_MAGE_PRIVATE_KEY",
+      "permission-contents: write",
+      "permission-workflows: write",
+      "GH_AW_CI_TRIGGER_TOKEN: ${{ steps.safe-outputs-app-token.outputs.token || '' }}",
+    ]) {
+      if (!lockContent.includes(expected)) {
+        throw new Error(`${lockFile} is missing ${expected}`);
+      }
+    }
+    if (/GH_AW_CI_TRIGGER_TOKEN:\s*\$\{\{\s*secrets\./.test(lockContent)) {
+      throw new Error(`${lockFile} uses a secret/PAT CI trigger fallback`);
+    }
+  }
   await writeFile(lockFile, lockContent);
 }
 

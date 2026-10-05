@@ -35,13 +35,20 @@ organization-owned **Dark Factory Mage** GitHub App on this repository. Set
 repository variable `DARK_FACTORY_MAGE_APP_ID` to `5122991` and repository
 secret `DARK_FACTORY_MAGE_PRIVATE_KEY` to its PEM private key. Do not store the
 key in source control. The installation needs only the repository permissions
-used here: Metadata read, Contents read, Actions read/write, Deployments
-read/write, Issues read/write, and Pull requests read/write. Keep
+used here: Metadata read, Contents read/write, Workflows read/write, Actions
+read/write, Deployments read/write, Issues read/write, and Pull requests
+read/write. Keep
 administration write on a separate operator credential used only for explicit
 ruleset reconciliation. Each privileged job mints a short-lived installation
 token limited to the current repository; agentic safe-output jobs receive the
 key, while reasoning jobs do not. Copilot inference uses
 `copilot-requests: write` and organization billing.
+
+Initial implementation uses gh-aw's App-authenticated `create-pull-request`
+safe output. Repair uses `push-to-pull-request-branch` for the one reconciled PR.
+Both request an App-authenticated extra commit so normal CI events fire. Do not
+configure `GH_AW_GITHUB_TOKEN`, `GH_AW_CI_TRIGGER_TOKEN`, a user PAT, or
+`assign-to-agent`.
 
 Validate the compiled credential boundary without exposing the secret:
 
@@ -97,6 +104,76 @@ This only prints prerequisites and inventory commands. It refuses `--apply`.
 Azure resource-group deletion has no what-if mode; inventory resources, locks,
 role assignments, backups, private endpoints, retained logs, and dependencies,
 then execute any approved deletion manually.
+
+## Azure Monitor alert adapter
+
+`apps/alert-adapter` is a Node.js 22 Azure Functions v4 application. Its
+`POST /api/alerts/azure-monitor` trigger uses Functions `function`
+authorization, accepts only Azure Monitor common-alert-schema payloads,
+normalizes severity and correlation metadata, and emits
+`azure-monitor-alert` or `container-apps-alert` repository dispatches to
+`The-weyland-yutani-corporation/dark-factory-demo`.
+
+The adapter uses its user-assigned managed identity for all Azure data-plane
+access:
+
+- **Key Vault Secrets User** on the existing vault to read
+  `dark-factory-mage-private-key`.
+- **Storage Blob Data Owner** on its deployment storage for the Functions host.
+- **Storage Queue Data Contributor** for Functions host coordination.
+- **Storage Table Data Contributor** on the same account for retry
+  deduplication.
+- Application Insights authenticated ingestion and Log Analytics diagnostics.
+
+The Dark Factory Mage private key is never a Bicep parameter or application
+setting. At runtime the adapter reads it from Key Vault, signs a GitHub App JWT,
+mints a short-lived token for App `5122991` installation `168176539`, uses the
+token once, and discards it. Do not configure a PAT or persist installation
+tokens.
+
+### Local verification
+
+Azure Functions Core Tools is optional for repository validation. The tested
+business logic does not need live Azure or GitHub access:
+
+```sh
+npm run build --workspace=@dark-factory/alert-adapter
+npx vitest run tests/alert-adapter.test.ts
+```
+
+For an authenticated local end-to-end test, sign in with Azure CLI, use a
+development vault and storage account, and provide the non-secret settings
+documented in `infra/modules/alert-adapter.bicep`. Never put the PEM value in
+`local.settings.json`.
+
+### Live activation prerequisites
+
+The repository intentionally does not deploy or activate the adapter. Before a
+live deployment:
+
+1. Install Dark Factory Mage on the target repository with **Metadata read** and
+   **Contents write** (required for `repository_dispatch`). Confirm installation
+   ID `168176539`.
+2. From an approved private-network operator, store the PEM as Key Vault secret
+   `dark-factory-mage-private-key`. Keep the secret value outside source,
+   parameters, deployment outputs, and logs.
+3. Deploy `infra/main.bicep`, then publish the built
+   `apps/alert-adapter` package to the provisioned Flex Consumption Function
+   App. Existing application and worker image deployment remains unchanged.
+4. Retrieve or rotate the `azure-monitor-alert` function key. Supply it as the
+   secure `alertAdapterFunctionKey` deployment parameter. An empty value leaves
+   the Action Group Function receiver disabled.
+5. Review Azure Monitor Action Group test notifications. The receiver uses the
+   common alert schema and a function-key URL; do not replace it with an
+   anonymous webhook.
+6. Confirm the Function integration subnet resolves the private Key Vault
+   endpoint and outbound HTTPS reaches `api.github.com`.
+7. Confirm the `incident-operations.yml` workflow accepts both dispatch event
+   types and that Table Storage deduplication suppresses repeated deliveries.
+
+The adapter records only normalized identifiers and status in logs. The storage
+entity has a seven-day expiry marker; a later delivery can reclaim an expired
+key, while fired and resolved states use different deduplication keys.
 
 ## Troubleshooting
 

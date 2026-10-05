@@ -1,9 +1,15 @@
 param baseName string
 param postgresServerId string
 param alertEmailAddress string
+param alertAdapterFunctionAppId string
+param alertAdapterFunctionUrl string
+@secure()
+param alertAdapterFunctionKey string
 param tags object
 
-var alertsEnabled = !empty(alertEmailAddress)
+var emailAlertsEnabled = !empty(alertEmailAddress)
+var alertAdapterEnabled = !empty(alertAdapterFunctionKey)
+var alertsEnabled = emailAlertsEnabled || alertAdapterEnabled
 
 resource actionGroup 'Microsoft.Insights/actionGroups@2023-01-01' = {
   name: '${baseName}-ag'
@@ -12,10 +18,19 @@ resource actionGroup 'Microsoft.Insights/actionGroups@2023-01-01' = {
   properties: {
     enabled: true
     groupShortName: take(replace(baseName, '-', ''), 12)
-    emailReceivers: alertsEnabled ? [
+    emailReceivers: emailAlertsEnabled ? [
       {
         name: 'operations'
         emailAddress: alertEmailAddress
+        useCommonAlertSchema: true
+      }
+    ] : []
+    azureFunctionReceivers: alertAdapterEnabled ? [
+      {
+        name: 'dark-factory-alert-adapter'
+        functionAppResourceId: alertAdapterFunctionAppId
+        functionName: 'azure-monitor-alert'
+        httpTriggerUrl: '${alertAdapterFunctionUrl}?code=${alertAdapterFunctionKey}'
         useCommonAlertSchema: true
       }
     ] : []
@@ -94,3 +109,4 @@ resource postgresStorageAlert 'Microsoft.Insights/metricAlerts@2026-01-01' = {
 
 output actionGroupId string = actionGroup.id
 output alertsEnabled bool = alertsEnabled
+output alertAdapterEnabled bool = alertAdapterEnabled

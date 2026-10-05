@@ -14,9 +14,18 @@ resource workerIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2024-1
   tags: tags
 }
 
+resource alertAdapterIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2024-11-30' = {
+  name: '${baseName}-alert-id'
+  location: location
+  tags: tags
+}
+
 output appIdentityId string = appIdentity.id
 output appPrincipalId string = appIdentity.properties.principalId
 output appClientId string = appIdentity.properties.clientId
 output workerIdentityId string = workerIdentity.id
 output workerPrincipalId string = workerIdentity.properties.principalId
 output workerClientId string = workerIdentity.properties.clientId
+output alertAdapterIdentityId string = alertAdapterIdentity.id
+output alertAdapterPrincipalId string = alertAdapterIdentity.properties.principalId
+output alertAdapterClientId string = alertAdapterIdentity.properties.clientId
