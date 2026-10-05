@@ -6,8 +6,10 @@ worker workloads:
 - Azure Container Apps workload-profiles environment on a dedicated VNet
   subnet, with encrypted peer traffic and Azure Monitor log routing.
 - Three Container Apps with separate user-assigned managed identities.
-- Premium Azure Container Registry with admin access disabled, private
-  endpoint access, and identity-based `AcrPull`.
+- Premium Azure Container Registry with admin and anonymous access disabled,
+  private endpoint access, and identity-based `AcrPull`. Public network access
+  is disabled by default and can be explicitly enabled for authenticated demo
+  publication from GitHub-hosted runners.
 - Workspace-based Application Insights and Log Analytics.
 - RBAC-enabled Key Vault with purge protection, public access disabled, and a
   private endpoint.
@@ -38,6 +40,14 @@ deployment with `deployApplications=false`, publish the separate web, API, and
 worker images to the output registry, and run it again with
 `deployApplications=true`. Use immutable image tags in production.
 
+`main.demo.bicepparam` is a non-secret demo template. Replace its Microsoft
+Entra administrator placeholders, then pass it with
+`--parameters infra\main.demo.bicepparam`. It explicitly sets
+`containerRegistryPublicNetworkAccessEnabled=true`, which permits
+identity-authenticated ACR access from GitHub-hosted runners. The ACR admin
+user and anonymous pull remain disabled, and the private endpoint remains
+deployed. Leave the parameter at its default `false` for private environments.
+
 ## Immutable network assumptions
 
 Treat the following choices as immutable after the first deployment:
@@ -55,8 +65,11 @@ Treat the following choices as immutable after the first deployment:
 5. The Container Apps environment has public ingress so the web and API can be
    reached without an application gateway. A fully internal environment is a
    separate topology and should be selected before the first deployment.
-6. ACR and Key Vault have public network access disabled. Image pulls and vault
-   access depend on VNet integration and the private DNS links.
+6. ACR and Key Vault have public network access disabled by default. Image
+   pulls and vault access depend on VNet integration and private DNS links.
+   The ACR public endpoint may be explicitly enabled for an authenticated demo
+   publishing path; this does not remove its private endpoint. Key Vault
+   remains private-only.
 7. Zone redundancy and PostgreSQL high availability are opt-in because region
    and capacity support vary. Enabling either later may cause replacement or
    downtime; decide these settings before production.
@@ -89,6 +102,8 @@ PostgreSQL.
   `APPLICATIONINSIGHTS_AUTHENTICATION_STRING=Authorization=AAD`.
 - The web image must listen on port `8080`; the API must listen on `3000`.
   The worker has no ingress.
-- Private-only ACR means image publication must originate from a network with
-  access to the VNet, or use an approved Azure-hosted build path that supports
-  the registry network configuration.
+- With the secure default, ACR image publication must originate from a network
+  with access to the VNet, or use an approved Azure-hosted build path that
+  supports the registry network configuration. Demo deployments may opt in to
+  authenticated public access for GitHub-hosted runners; use OIDC with
+  registry-scoped `AcrPush`, never admin credentials.

@@ -34,6 +34,9 @@ param imageTag string = '0.1.0'
 @description('Deploy the web, API, and worker after their images exist in the registry.')
 param deployApplications bool = true
 
+@description('Allow authenticated access to Azure Container Registry over its public endpoint. Keep false for private deployments; enable only for demos that publish from GitHub-hosted runners.')
+param containerRegistryPublicNetworkAccessEnabled bool = false
+
 @description('Whether the Container Apps environment is zone redundant. Requires regional support.')
 param zoneRedundant bool = false
 
@@ -120,6 +123,7 @@ module registry 'modules/registry.bicep' = {
     privateEndpointSubnetId: network.outputs.privateEndpointsSubnetId
     privateDnsZoneId: network.outputs.acrPrivateDnsZoneId
     logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsWorkspaceId
+    publicNetworkAccessEnabled: containerRegistryPublicNetworkAccessEnabled
     pullIdentityPrincipalIds: [
       identities.outputs.appPrincipalId
       identities.outputs.workerPrincipalId

@@ -3,6 +3,7 @@ param location string
 param privateEndpointSubnetId string
 param privateDnsZoneId string
 param logAnalyticsWorkspaceId string
+param publicNetworkAccessEnabled bool
 param pullIdentityPrincipalIds array
 param tags object
 
@@ -20,9 +21,13 @@ resource registry 'Microsoft.ContainerRegistry/registries@2025-04-01' = {
   }
   properties: {
     adminUserEnabled: false
+    anonymousPullEnabled: false
     dataEndpointEnabled: false
     networkRuleBypassOptions: 'AzureServices'
-    publicNetworkAccess: 'Disabled'
+    publicNetworkAccess: publicNetworkAccessEnabled ? 'Enabled' : 'Disabled'
+    networkRuleSet: {
+      defaultAction: publicNetworkAccessEnabled ? 'Allow' : 'Deny'
+    }
     policies: {
       exportPolicy: {
         status: 'disabled'

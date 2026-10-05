@@ -124,18 +124,18 @@ verification, progressive exposure, and automatic rollback instead.
 
 ### Required repository variables
 
-| Variable                          | Purpose                                                               |
-| --------------------------------- | --------------------------------------------------------------------- |
-| `AZURE_CLIENT_ID`                 | Client ID of the OIDC-federated delivery identity                     |
-| `AZURE_TENANT_ID`                 | Microsoft Entra tenant                                                |
-| `AZURE_SUBSCRIPTION_ID`           | Target subscription                                                   |
-| `AZURE_RESOURCE_GROUP`            | Resource group containing the Container App                           |
-| `AZURE_CONTAINER_APP_NAME`        | Production Container App serving the API and web UI                   |
-| `AZURE_CONTAINER_REGISTRY_NAME`   | ACR resource name used by `az acr login`                              |
-| `AZURE_CONTAINER_REGISTRY_SERVER` | ACR login server, for example `name.azurecr.io`                       |
-| `AZURE_IMAGE_REPOSITORY`          | Repository within ACR                                                 |
-| `DELIVERY_RUNNER`                 | Runner label with network access to the private ACR and Container App |
-| `PRODUCTION_BASE_URL`             | Public production URL used by the scheduled health/version synthetic  |
+| Variable                          | Purpose                                                                                                                    |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `AZURE_CLIENT_ID`                 | Client ID of the OIDC-federated delivery identity                                                                          |
+| `AZURE_TENANT_ID`                 | Microsoft Entra tenant                                                                                                     |
+| `AZURE_SUBSCRIPTION_ID`           | Target subscription                                                                                                        |
+| `AZURE_RESOURCE_GROUP`            | Resource group containing the Container App                                                                                |
+| `AZURE_CONTAINER_APP_NAME`        | Production Container App serving the API and web UI                                                                        |
+| `AZURE_CONTAINER_REGISTRY_NAME`   | ACR resource name used by `az acr login`                                                                                   |
+| `AZURE_CONTAINER_REGISTRY_SERVER` | ACR login server, for example `name.azurecr.io`                                                                            |
+| `AZURE_IMAGE_REPOSITORY`          | Repository within ACR                                                                                                      |
+| `DELIVERY_RUNNER`                 | Runner label; use a connected runner for private ACR or GitHub-hosted only with the explicit demo ACR public-access opt-in |
+| `PRODUCTION_BASE_URL`             | Public production URL used by the scheduled health/version synthetic                                                       |
 
 Optional variables are `PRODUCTION_TRAFFIC_STEPS` (default
 `5,25,50,100`), `PRODUCTION_OBSERVATION_SECONDS` (default `60`),
@@ -147,10 +147,13 @@ They must also be safe to retry after an interrupted delivery.
 The delivery identity uses a federated credential restricted to this
 repository's `main` branch. Grant it `AcrPush` scoped to the registry and
 `Container Apps Contributor` scoped to the production Container App (and the
-optional migration job). No Azure client secret is stored in GitHub. The
-registry deployed by this repository is private, so `DELIVERY_RUNNER` must
-select a pre-provisioned runner on the connected virtual network with Node.js,
-Docker, and Azure CLI already available.
+optional migration job). No Azure client secret is stored in GitHub. The registry is private by default,
+so `DELIVERY_RUNNER` must normally select a pre-provisioned runner on the
+connected virtual network with Node.js, Docker, and Azure CLI already
+available. Demo deployments may explicitly set
+`containerRegistryPublicNetworkAccessEnabled=true` and use a GitHub-hosted
+runner; access remains authenticated through OIDC, with admin and anonymous
+registry access disabled and the private endpoint retained.
 
 ## Autonomous integration
 
