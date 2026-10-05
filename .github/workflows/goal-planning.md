@@ -9,6 +9,9 @@ permissions:
   pull-requests: read
   actions: read
 network: defaults
+engine:
+  id: copilot
+  model: gpt-5.4
 timeout-minutes: 20
 tools:
   github:
