@@ -5,6 +5,7 @@
     { "path": "./packages/observability" },
     { "path": "./packages/policy-engine" },
     { "path": "./apps/api" },
+    { "path": "./apps/alert-adapter" },
     { "path": "./apps/worker" },
     { "path": "./apps/web" }
   ]

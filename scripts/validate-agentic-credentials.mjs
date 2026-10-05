@@ -24,6 +24,14 @@ for (const source of sources) {
   if (content.includes("secrets.GH_AW_GITHUB_TOKEN")) {
     errors.push(`${source} retains the retired PAT credential`);
   }
+  if (
+    content.includes("assign-to-agent:") ||
+    content.includes("assign_to_agent")
+  ) {
+    errors.push(
+      `${source} uses assign-to-agent, which is not App-authenticated`,
+    );
+  }
 }
 
 for (const lock of locks) {
@@ -43,6 +51,64 @@ for (const lock of locks) {
     content.includes("secrets.GH_AW_AGENT_TOKEN")
   ) {
     errors.push(`${lock} retains a GH_AW_GITHUB_TOKEN fallback`);
+  }
+  if (
+    content.includes("assign-to-agent") ||
+    content.includes("assign_to_agent")
+  ) {
+    errors.push(`${lock} contains assign-to-agent output`);
+  }
+}
+
+const implementationSource = await readFile(
+  `${root}/coding-agent-assignment.md`,
+  "utf8",
+);
+for (const expected of [
+  "create-pull-request:",
+  "github-token-for-extra-empty-commit: app",
+  "protected-files: request_review",
+  "allow-workflows: true",
+]) {
+  if (!implementationSource.includes(expected)) {
+    errors.push(`coding-agent-assignment.md is missing ${expected}`);
+  }
+}
+
+const repairSource = await readFile(
+  `${root}/bounded-repair-routing.md`,
+  "utf8",
+);
+for (const expected of [
+  "push-to-pull-request-branch:",
+  'target: "*"',
+  "fallback-as-pull-request: false",
+  "github-token-for-extra-empty-commit: app",
+  "protected-files: allowed",
+  "allow-workflows: true",
+]) {
+  if (!repairSource.includes(expected)) {
+    errors.push(`bounded-repair-routing.md is missing ${expected}`);
+  }
+}
+
+for (const [lockName, outputType] of [
+  ["coding-agent-assignment.lock.yml", "create_pull_request"],
+  ["bounded-repair-routing.lock.yml", "push_to_pull_request_branch"],
+]) {
+  const content = await readFile(`${root}/${lockName}`, "utf8");
+  for (const expected of [
+    outputType,
+    "permission-contents: write",
+    "permission-workflows: write",
+    "GH_AW_CI_TRIGGER_TOKEN: ${{ steps.safe-outputs-app-token.outputs.token || '' }}",
+  ]) {
+    if (!content.includes(expected)) {
+      errors.push(`${lockName} is missing ${expected}`);
+    }
+  }
+  if (/GH_AW_CI_TRIGGER_TOKEN:\s*\$\{\{\s*secrets\./.test(content)) {
+    errors.push(`${lockName} uses a PAT/secret CI trigger fallback`);
   }
 }
 
@@ -141,10 +207,11 @@ async function validateRuntime() {
           repositories: [name],
           permissions: {
             actions: "write",
-            contents: "read",
+            contents: "write",
             deployments: "write",
             issues: "write",
             pull_requests: "write",
+            workflows: "write",
           },
         }),
       },

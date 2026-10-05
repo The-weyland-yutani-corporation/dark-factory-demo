@@ -8,6 +8,7 @@ const checks = [
   ["unit-coverage", ["npm", "test"]],
   ["api-contract", ["npm", "run", "test:api-contract"]],
   ["delivery-scripts", ["npm", "run", "test:delivery"]],
+  ["infrastructure-scripts", ["npm", "run", "test:infrastructure"]],
   ["self-modification", ["npm", "run", "test:self-modification"]],
   ["accessibility", ["npm", "run", "test:accessibility"]],
   ["build", ["npm", "run", "build"]],

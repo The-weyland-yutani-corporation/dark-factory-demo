@@ -323,6 +323,8 @@
     "deploymentPaths": [
       "Dockerfile",
       "infra",
+      "scripts/infrastructure",
+      ".github/workflows/infrastructure.yml",
       "scripts/delivery",
       ".github/workflows/delivery.yml",
       ".github/workflows/production.yml",

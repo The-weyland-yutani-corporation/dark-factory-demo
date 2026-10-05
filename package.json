@@ -34,6 +34,7 @@
     "test:delivery": "node --test scripts/delivery/self-test.mjs",
     "test:demo": "node --test scripts/demo/self-test.mjs",
     "test:integration-policy": "vitest run tests/policy-engine.test.ts",
+    "test:infrastructure": "node --test scripts/infrastructure/self-test.mjs",
     "test:operations": "node --test scripts/operations/self-test.mjs",
     "test:mutation": "stryker run",
     "test:unit": "vitest run",

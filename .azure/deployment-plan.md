@@ -1,6 +1,6 @@
 # Azure Deployment Plan
 
-> **Status:** Planning
+> **Status:** Ready for Validation
 
 Generated: 2026-10-04
 
@@ -45,6 +45,7 @@ networking, registry, identity, and monitoring services are available there.
 | Control Room             | Frontend            | React + Vite                              | `apps/web`               |
 | Control Room API         | API and static host | Fastify + Node.js 22                      | `apps/api`               |
 | Factory worker           | Background worker   | Node.js 22                                | `apps/worker`            |
+| Azure alert adapter      | Azure Function      | TypeScript + Azure Functions v4 / Node 22 | `apps/alert-adapter`     |
 | Shared contracts         | Library             | TypeScript                                | `packages/contracts`     |
 | Policy engine            | Library             | TypeScript                                | `packages/policy-engine` |
 | Observability            | Library             | TypeScript                                | `packages/observability` |
@@ -85,6 +86,7 @@ Container Apps overrides the image command so the application runs
 | Logs             | Log Analytics                    | Workspace-based centralized logs                                                  |
 | APM              | Application Insights             | Workspace-based, local auth disabled                                              |
 | Operations       | Azure Monitor                    | Action group and PostgreSQL CPU/storage alerts                                    |
+| Alert bridge     | Azure Functions Flex Consumption | Function-authenticated common-alert-schema receiver and GitHub App dispatch       |
 | Runtime identity | User-assigned managed identities | Separate application and worker identities                                        |
 | CI/CD identity   | User-assigned managed identity   | GitHub OIDC federated to `main`; no client secret                                 |
 
@@ -101,20 +103,17 @@ Container Apps overrides the image command so the application runs
 8. Run production health, readiness, version, synthetic, telemetry, and rollback
    verification.
 
-### Private Registry Runner Decision
+### Authenticated Demo Registry Access
 
-The registry is intentionally private. The current workflow performs a Docker
-push, so it requires a runner with VNet connectivity. No repository runner is
-currently registered. Before enabling delivery, choose one of these reviewed
-paths:
+The demo parameter files explicitly set
+`containerRegistryPublicNetworkAccessEnabled=true`, allowing
+identity-authenticated publication from GitHub-hosted runners. ACR admin access
+and anonymous pull remain disabled, the private endpoint remains deployed, and
+the delivery identity still requires registry-scoped `AcrPush`.
 
-- **Preferred secure path:** provision a hardened ephemeral self-hosted runner
-  in the VNet and set `DELIVERY_RUNNER` to its label.
-- **Alternative implementation path:** change delivery to an Azure-native
-  registry build that is independently attested and does not require direct
-  runner access.
-
-The production workflow must remain disabled until one path is validated.
+Set `DELIVERY_RUNNER=ubuntu-latest` for this demo only. A production or private
+environment should restore the secure default and use a connected runner or an
+approved Azure-native build path.
 
 ## 6. Provisioning Limit Checklist
 
@@ -166,20 +165,37 @@ Quota sources:
 - [x] Select the direct Bicep recipe.
 - [x] Plan the architecture and bootstrap sequence.
 - [ ] User approves this plan and the planned cloud/repository changes.
+- [x] User explicitly requested implementation without live deployment.
 
 ### Phase 2: Preparation
 
-- [ ] Resolve the private delivery runner decision.
-- [ ] Generate a non-secret `infra/main.parameters.json` from confirmed values.
+- [x] Implement and test the Azure Monitor alert adapter.
+- [x] Add managed identity, storage deduplication, Key Vault RBAC, monitoring,
+      and Action Group Function receiver wiring.
+- [x] Select authenticated public ACR access and GitHub-hosted delivery for the
+      demo.
+- [x] Generate non-secret two-stage demo Bicep parameter files from confirmed
+      values.
+- [x] Compile `main.bicep` and both demo parameter files locally.
 - [ ] Add the GitHub OIDC deployment identity and federated credential to IaC or
       an explicitly reviewed bootstrap command.
 - [ ] Validate the application image locally or in CI.
 - [ ] Run GitHub reconciliation dry run and review the exact mutations.
-- [ ] Update this plan to `Ready for Validation`.
+- [x] Update this plan to `Ready for Validation`.
 
 ### Phase 3: Validation
 
 - [ ] Invoke `azure-validate`.
+- [x] All local validation checks pass.
+  - [x] Core local validation: Bicep compiler build for `infra/main.bicep`
+        and both checked-in `.bicepparam` files.
+  - [x] Lint, typecheck, build, unit tests, operations tests, IaC policy,
+        secret scan, and production dependency audit.
+  - [ ] Azure deployment validation and what-if against the target resource
+        group (live prerequisite; intentionally not run for this no-deployment
+        task).
+  - [ ] Azure Policy validation against the target subscription (live
+        prerequisite).
 - [ ] Validate Bicep and parameters.
 - [ ] Run resource-group deployment validation and what-if.
 - [ ] Validate Azure role prerequisites.
@@ -202,17 +218,42 @@ Quota sources:
 
 ## 8. Validation Proof
 
-The `azure-validate` skill has not run yet. It must record actual commands,
-results, and timestamps here before changing the plan status to `Validated`.
+| Check                    | Command Run                                                                  | Result                                              | Timestamp  |
+| ------------------------ | ---------------------------------------------------------------------------- | --------------------------------------------------- | ---------- |
+| Alert adapter tests      | `npx vitest run tests/alert-adapter.test.ts`                                 | Passed: 5 tests                                     | 2026-10-05 |
+| Full unit tests          | `npm run test:unit`                                                          | Passed: 11 files, 49 tests                          | 2026-10-05 |
+| Operations integration   | `npm run test:operations`                                                    | Passed: 7 tests                                     | 2026-10-05 |
+| Lint                     | `npm run lint`                                                               | Passed                                              | 2026-10-05 |
+| TypeScript               | `npm run typecheck`                                                          | Passed                                              | 2026-10-05 |
+| Production build         | `npm run build`                                                              | Passed                                              | 2026-10-05 |
+| Formatting               | `npm run format:check`                                                       | Passed                                              | 2026-10-05 |
+| Bicep compile            | `npm run verify:bicep`                                                       | Passed: main and both checked-in parameter files    | 2026-10-05 |
+| IaC policy               | `npm run scan:iac`                                                           | Passed: 11 Bicep files                              | 2026-10-05 |
+| Secret scan              | `npm run scan:secrets`                                                       | Passed: 176 files, no private key or token material | 2026-10-05 |
+| Production dependencies  | `npm run scan:dependencies`                                                  | Passed: 0 vulnerabilities                           | 2026-10-05 |
+| Static RBAC review       | `infra/modules/alert-adapter.bicep` and `infra/modules/key-vault.bicep`      | Passed: resource-scoped data-plane roles            | 2026-10-05 |
+| Azure validate / what-if | Not run: requires live target resource group and was outside no-deploy scope | Live prerequisite                                   | 2026-10-05 |
+| Azure Policy validation  | Not run against subscription                                                 | Live prerequisite                                   | 2026-10-05 |
 
-| Check              | Command Run                  | Result  | Timestamp  |
-| ------------------ | ---------------------------- | ------- | ---------- |
-| Validation handoff | Not run before plan approval | Pending | 2026-10-04 |
-
-**Validated by:** Not yet validated  
-**Validation timestamp:** Not yet validated
+**Validated by:** Local repository validation through `azure-validate`; live
+Azure validation remains pending.
+**Validation timestamp:** 2026-10-05
 
 ## 9. Identity, RBAC, and GitHub Configuration
+
+### Alert adapter role assignment verification
+
+- **Status:** Static verification complete.
+- **Identity:** Dedicated `${baseName}-alert-id` user-assigned managed identity.
+- **Key Vault:** Key Vault Secrets User, scoped to the existing vault.
+- **Storage:** Storage Blob Data Owner, Storage Queue Data Contributor, and
+  Storage Table Data Contributor, scoped to the adapter storage account.
+- **Telemetry:** Application Insights authenticated ingestion role through the
+  existing monitoring module.
+- **Network:** Dedicated delegated Functions integration subnet with private
+  Key Vault DNS resolution.
+- **Issues:** No subscription- or resource-group-scoped runtime roles were
+  introduced. Live role verification remains a post-deployment prerequisite.
 
 ### Azure identity
 
@@ -258,18 +299,56 @@ Required setup:
 Creating or storing the persistent GitHub credential and changing repository or
 Azure permissions require explicit approval immediately before execution.
 
+### Confirmed demo parameters
+
+| Input                          | Value                                                                                   |
+| ------------------------------ | --------------------------------------------------------------------------------------- |
+| Subscription                   | `ad92e163-a85e-40cc-bb50-054b0b8197a8`                                                  |
+| Tenant                         | `1cf61a60-a877-46a7-86bc-a8f76b6ab441`                                                  |
+| Resource group                 | `rg-dark-factory-demo-eus2`                                                             |
+| Location                       | `eastus2`                                                                               |
+| Name prefix / environment      | `darkfactory` / `demo`                                                                  |
+| PostgreSQL Entra administrator | `sharmave@MngEnvMCAP744360.onmicrosoft.com` (`6ab9e067-26ba-469d-a1de-4b5a1571bd3f`)    |
+| Image repository / initial tag | `dark-factory` / `0.1.0`                                                                |
+| Availability                   | PostgreSQL HA disabled; Container Apps zone redundancy disabled                         |
+| ACR access                     | Authenticated public endpoint enabled for the demo; admin and anonymous access disabled |
+| Stage 1                        | `infra/main.demo.bicepparam` with `deployApplications=false`                            |
+| Stage 2                        | `infra/main.demo.applications.bicepparam` with `deployApplications=true`                |
+
+Subscription and resource group are Azure CLI deployment scope and therefore
+do not appear as Bicep parameters.
+
+### Exact output-to-GitHub-variable mapping
+
+| GitHub variable                   | Source                                                                   |
+| --------------------------------- | ------------------------------------------------------------------------ |
+| `AZURE_CLIENT_ID`                 | `clientId` of the separately approved GitHub OIDC user-assigned identity |
+| `AZURE_TENANT_ID`                 | Fixed tenant `1cf61a60-a877-46a7-86bc-a8f76b6ab441`                      |
+| `AZURE_SUBSCRIPTION_ID`           | Fixed subscription `ad92e163-a85e-40cc-bb50-054b0b8197a8`                |
+| `AZURE_RESOURCE_GROUP`            | Fixed resource group `rg-dark-factory-demo-eus2`                         |
+| `AZURE_CONTAINER_APP_NAME`        | Stage 2 output `applicationName.value`                                   |
+| `AZURE_CONTAINER_REGISTRY_SERVER` | Stage 2 output `containerRegistryLoginServer.value`                      |
+| `AZURE_CONTAINER_REGISTRY_NAME`   | First DNS label of `containerRegistryLoginServer.value`                  |
+| `AZURE_IMAGE_REPOSITORY`          | Fixed value `dark-factory`                                               |
+| `DELIVERY_RUNNER`                 | Fixed demo value `ubuntu-latest`                                         |
+| `PRODUCTION_BASE_URL`             | Stage 2 output `applicationUrl.value`                                    |
+
+The executable PowerShell mapping commands are documented in
+`infra/README.md`. No credential or mutable GitHub App installation token is
+stored in these parameters.
+
 ## 10. Risks and Rollback
 
-| Risk                                                  | Mitigation                                                                                                  |
-| ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Private ACR is unreachable from GitHub-hosted runners | Keep delivery disabled until a private runner or reviewed Azure-native build path exists                    |
-| Initial application images do not exist               | Deploy base infrastructure with `deployApplications=false`, then build images before application deployment |
-| OIDC identity has excessive scope                     | Assign roles at ACR and Container App resource scopes, not subscription scope                               |
-| PostgreSQL administrator is an individual             | Acceptable for the demo; replace with an Entra security group for shared production ownership               |
-| Merge queue/ruleset blocks all merges                 | Apply only after all required workflows exist on `main`; retain an explicit operator recovery procedure     |
-| Bad application revision                              | Multiple revisions, progressive traffic, health/synthetic checks, and automatic rollback                    |
-| Database migration incompatibility                    | Migration hook remains opt-in and must be backward-compatible and retry-safe                                |
-| Resource cost growth                                  | Consumption Container Apps, low replica minimums, non-HA PostgreSQL for the initial demo, 30-day logs       |
+| Risk                                                   | Mitigation                                                                                                  |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| Demo ACR public endpoint broadens network reachability | Require OIDC and registry-scoped `AcrPush`; keep admin and anonymous access disabled                        |
+| Initial application images do not exist                | Deploy base infrastructure with `deployApplications=false`, then build images before application deployment |
+| OIDC identity has excessive scope                      | Assign roles at ACR and Container App resource scopes, not subscription scope                               |
+| PostgreSQL administrator is an individual              | Acceptable for the demo; replace with an Entra security group for shared production ownership               |
+| Merge queue/ruleset blocks all merges                  | Apply only after all required workflows exist on `main`; retain an explicit operator recovery procedure     |
+| Bad application revision                               | Multiple revisions, progressive traffic, health/synthetic checks, and automatic rollback                    |
+| Database migration incompatibility                     | Migration hook remains opt-in and must be backward-compatible and retry-safe                                |
+| Resource cost growth                                   | Consumption Container Apps, low replica minimums, non-HA PostgreSQL for the initial demo, 30-day logs       |
 
 Rollback uses the prior active Container Apps revision. Infrastructure
 deployment uses incremental mode and must be preceded by what-if. No teardown or
@@ -277,18 +356,22 @@ resource deletion is part of this plan.
 
 ## 11. Files
 
-| File                         | Purpose                           | Status                         |
-| ---------------------------- | --------------------------------- | ------------------------------ |
-| `.azure/deployment-plan.md`  | Deployment source of truth        | Complete for approval          |
-| `infra/main.bicep`           | Resource-group infrastructure     | Existing and locally validated |
-| `infra/modules/*.bicep`      | Modular Azure resources           | Existing and locally validated |
-| `Dockerfile`                 | Combined application/worker image | Existing and locally validated |
-| `infra/main.parameters.json` | Non-secret environment values     | Generate after approval        |
+| File                                      | Purpose                           | Status                                               |
+| ----------------------------------------- | --------------------------------- | ---------------------------------------------------- |
+| `.azure/deployment-plan.md`               | Deployment source of truth        | Parameter sections updated; overall approval pending |
+| `infra/main.bicep`                        | Resource-group infrastructure     | Existing and locally compiled                        |
+| `infra/modules/*.bicep`                   | Modular Azure resources           | Existing and locally compiled through `main.bicep`   |
+| `Dockerfile`                              | Combined application/worker image | Existing and locally validated                       |
+| `infra/main.demo.bicepparam`              | Stage 1 non-secret demo values    | Generated and locally compiled                       |
+| `infra/main.demo.applications.bicepparam` | Stage 2 non-secret demo values    | Generated and locally compiled                       |
+| `scripts/bicep-validate.mjs`              | Template and parameter compiler   | Updated to compile every `.bicepparam` file          |
+| `tests/iac-parameters.test.ts`            | Parameter consistency tests       | Added and passing                                    |
 
 ## 12. Next Step
 
-Review and approve this plan. After approval, preparation will resolve the
-private runner choice, generate deployment parameters and OIDC configuration,
-run `azure-validate`, present the Azure what-if result, and request a final
-deployment confirmation before creating cloud resources or changing repository
-permissions.
+Review and approve the remaining cloud and repository changes. The non-secret
+parameters are ready, but no deployment, OIDC identity creation, role
+assignment, GitHub mutation, Azure validation/what-if, or credential creation
+has run. After those approvals, complete the identity bootstrap and hand off to
+`azure-validate`; only that validation flow may change this plan to
+`Validated`.

@@ -2,6 +2,7 @@ import { rm } from "node:fs/promises";
 
 const paths = [
   "apps/api/dist",
+  "apps/alert-adapter/dist",
   "apps/web/dist",
   "apps/worker/dist",
   "packages/contracts/dist",

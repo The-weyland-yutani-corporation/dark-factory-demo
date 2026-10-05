@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { mkdir } from "node:fs/promises";
+import { mkdir, readdir } from "node:fs/promises";
 import { homedir } from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
@@ -33,9 +33,34 @@ if (!compiler) {
 }
 
 await mkdir("reports/bicep", { recursive: true });
-const result = spawnSync(
-  compiler,
-  ["build", "infra/main.bicep", "--outfile", "reports/bicep/main.json"],
-  { encoding: "utf8", stdio: "inherit" },
-);
-process.exitCode = result.status ?? 1;
+
+const builds = [
+  {
+    args: ["build", "infra/main.bicep", "--outfile", "reports/bicep/main.json"],
+    label: "infra/main.bicep",
+  },
+  ...(await readdir("infra"))
+    .filter((file) => file.endsWith(".bicepparam"))
+    .sort()
+    .map((file) => ({
+      args: [
+        "build-params",
+        path.join("infra", file),
+        "--outfile",
+        path.join("reports", "bicep", `${file}.json`),
+      ],
+      label: `infra/${file}`,
+    })),
+];
+
+for (const build of builds) {
+  console.log(`Compiling ${build.label}`);
+  const result = spawnSync(compiler, build.args, {
+    encoding: "utf8",
+    stdio: "inherit",
+  });
+  if (result.status !== 0) {
+    process.exitCode = result.status ?? 1;
+    break;
+  }
+}

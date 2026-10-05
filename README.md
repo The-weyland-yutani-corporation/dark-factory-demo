@@ -47,7 +47,10 @@ with concurrency and timeout bounds before the synchronization diff is checked.
 Copilot inference is billed to the organization through
 `copilot-requests: write`. Lifecycle safe-output jobs mint short-lived,
 repository-scoped installation tokens for the Dark Factory Mage GitHub App;
-the App private key is never provided to the reasoning job.
+the App private key is never provided to the reasoning job. Goal implementation
+uses the App-authenticated `create-pull-request` code-writing boundary, and
+bounded repair uses `push-to-pull-request-branch` against the single reconciled
+pull request. No user PAT or `assign-to-agent` handoff is used.
 
 The API exposes `GET /healthz`, `GET /readyz`, `GET /version`, and
 `POST /api/policies/evaluate`. `GET /api/factory/overview` powers the control
@@ -144,6 +147,12 @@ Optional variables are `PRODUCTION_TRAFFIC_STEPS` (default
 When no migration job is configured, the hook is an explicit no-op. Migration
 jobs must be backward-compatible with both the old and new revisions.
 They must also be safe to retry after an interrupted delivery.
+
+The trusted infrastructure workflow also uses the four Azure OIDC and scope
+variables above. It runs only after the exact `main` SHA passes deterministic
+verification and retains validation, what-if, deployment, and source evidence
+for 30 days. Its federated identity should be scoped to the configured resource
+group; no subscription-wide role is required.
 
 The delivery identity uses a federated credential restricted to this
 repository's `main` branch. Grant it `AcrPush` scoped to the registry and

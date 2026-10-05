@@ -35,6 +35,20 @@ shift traffic, and roll back. Azure Container Apps is the runtime plane.
 Repository reconciliation and Azure deployment are intentionally separate,
 explicit live activation steps. Local verification never changes either plane.
 
+## Azure alert bridge
+
+Azure Monitor sends common-alert-schema events to a function-authenticated
+Azure Functions Flex Consumption endpoint. The alert adapter normalizes
+severity, rule and correlation identifiers, commit SHA, and Container Apps
+revision; claims a managed-identity-authenticated Table Storage key to suppress
+retries; and sends the existing incident workflow a repository dispatch.
+
+The adapter retrieves the Dark Factory Mage private key from private Key Vault
+through its dedicated managed identity. It mints an installation token only for
+App `5122991` installation `168176539` and never persists that token or a PAT.
+The application and worker Container Apps remain independently deployed and
+unchanged by this bridge.
+
 ## Failure behavior
 
 Configuration is validated before the API listens. Missing production data

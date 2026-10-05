@@ -62,6 +62,16 @@ param postgresSubnetPrefix string = '10.40.2.0/24'
 @description('Private endpoint subnet prefix.')
 param privateEndpointsSubnetPrefix string = '10.40.3.0/24'
 
+@description('Azure Functions Flex Consumption integration subnet prefix.')
+param functionsSubnetPrefix string = '10.40.4.0/24'
+
+@description('GitHub App private-key secret name. The secret value is created outside Bicep.')
+param githubAppPrivateKeySecretName string = 'dark-factory-mage-private-key'
+
+@description('Function host key used by the Azure Monitor Action Group receiver. Leave empty until adapter code is published and the host key is retrieved.')
+@secure()
+param alertAdapterFunctionKey string = ''
+
 @description('Tags applied to all resources.')
 param tags object = {}
 
@@ -78,6 +88,7 @@ var commonTags = union(tags, {
 var registryName = take('${normalizedPrefix}${normalizedEnvironment}${resourceToken}', 50)
 var keyVaultName = take('${normalizedPrefix}-${environmentName}-${resourceToken}', 24)
 var postgresName = take('${normalizedPrefix}-${environmentName}-${resourceToken}-pg', 63)
+var alertStorageName = take('${normalizedPrefix}${normalizedEnvironment}${resourceToken}alert', 24)
 
 module network 'modules/network.bicep' = {
   name: 'network'
@@ -86,6 +97,7 @@ module network 'modules/network.bicep' = {
     location: location
     vnetAddressPrefix: vnetAddressPrefix
     containerAppsSubnetPrefix: containerAppsSubnetPrefix
+    functionsSubnetPrefix: functionsSubnetPrefix
     postgresSubnetPrefix: postgresSubnetPrefix
     privateEndpointsSubnetPrefix: privateEndpointsSubnetPrefix
     postgresPrivateDnsZoneName: '${postgresName}.private.postgres.database.azure.com'
@@ -101,6 +113,7 @@ module monitoring 'modules/monitoring.bicep' = {
     telemetryPrincipalIds: [
       identities.outputs.appPrincipalId
       identities.outputs.workerPrincipalId
+      identities.outputs.alertAdapterPrincipalId
     ]
     tags: commonTags
   }
@@ -144,6 +157,7 @@ module keyVault 'modules/key-vault.bicep' = {
     secretReaderPrincipalIds: [
       identities.outputs.appPrincipalId
       identities.outputs.workerPrincipalId
+      identities.outputs.alertAdapterPrincipalId
     ]
     tags: commonTags
   }
@@ -175,6 +189,24 @@ module containerEnvironment 'modules/container-environment.bicep' = {
     location: location
     infrastructureSubnetId: network.outputs.containerAppsSubnetId
     zoneRedundant: zoneRedundant
+    logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsWorkspaceId
+    tags: commonTags
+  }
+}
+
+module alertAdapter 'modules/alert-adapter.bicep' = {
+  name: 'alertAdapter'
+  params: {
+    name: '${containerAppBaseName}-alert'
+    storageAccountName: alertStorageName
+    location: location
+    identityId: identities.outputs.alertAdapterIdentityId
+    identityClientId: identities.outputs.alertAdapterClientId
+    identityPrincipalId: identities.outputs.alertAdapterPrincipalId
+    integrationSubnetId: network.outputs.functionsSubnetId
+    keyVaultUri: keyVault.outputs.vaultUri
+    githubAppPrivateKeySecretName: githubAppPrivateKeySecretName
+    applicationInsightsConnectionString: monitoring.outputs.applicationInsightsConnectionString
     logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsWorkspaceId
     tags: commonTags
   }
@@ -289,6 +321,9 @@ module alerts 'modules/alerts.bicep' = {
     baseName: baseName
     postgresServerId: postgres.outputs.serverId
     alertEmailAddress: alertEmailAddress
+    alertAdapterFunctionAppId: alertAdapter.outputs.functionAppId
+    alertAdapterFunctionUrl: alertAdapter.outputs.functionUrl
+    alertAdapterFunctionKey: alertAdapterFunctionKey
     tags: commonTags
   }
 }
@@ -304,3 +339,6 @@ output applicationName string = app.?outputs.name ?? ''
 output workerName string = worker.?outputs.name ?? ''
 output applicationIdentityClientId string = identities.outputs.appClientId
 output workerIdentityClientId string = identities.outputs.workerClientId
+output alertAdapterFunctionName string = alertAdapter.outputs.functionName
+output alertAdapterFunctionUrl string = alertAdapter.outputs.functionUrl
+output alertAdapterIdentityClientId string = identities.outputs.alertAdapterClientId

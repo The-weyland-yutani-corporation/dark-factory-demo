@@ -65,6 +65,29 @@ test("Azure common alert schema becomes a severe incident", () => {
   assert.match(signal.incidentKey, /^production:metric:/);
 });
 
+test("normalized alert adapter payload preserves deployment correlation", () => {
+  const signal = canonicalizeEvent("repository_dispatch", {
+    client_payload: {
+      source: "azure-monitor",
+      eventType: "container-apps-alert",
+      rule: { name: "Container Apps error rate", id: "rule-17" },
+      status: "Fired",
+      severity: { azure: "Sev0", normalized: "critical", priority: 0 },
+      signalType: "Log",
+      targetResourceIds: [
+        "/subscriptions/x/resourceGroups/rg/providers/Microsoft.App/containerApps/api",
+      ],
+      commitSha: "abc123",
+      containerAppsRevision: "api--abc123",
+      firedAt: "2026-10-05T12:00:00Z",
+    },
+  });
+  assert.equal(signal.severity, "sev1-critical");
+  assert.equal(signal.rule, "Container Apps error rate");
+  assert.equal(signal.commit, "abc123");
+  assert.equal(signal.revision, "api--abc123");
+});
+
 test("fingerprints suppress timestamps but separate deployments", () => {
   const base = {
     environment: "production",

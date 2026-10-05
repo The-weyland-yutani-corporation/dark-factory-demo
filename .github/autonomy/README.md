@@ -15,6 +15,14 @@
 
 Labels describe current state; comments and linked check artifacts preserve transition history. A retry must first read that history and recorded operation keys rather than infer completion from labels alone.
 
+Implementation and repair remain inside the App-authenticated gh-aw safe-output
+boundary. Initial implementation writes code and emits one
+`create-pull-request`; bounded repair emits one
+`push-to-pull-request-branch` for the reconciled matching pull request. Both use
+Dark Factory Mage installation tokens, App-authenticated CI-trigger commits,
+protected-file review policy, deterministic operation keys, and the independent
+review workflow. User PATs and `assign-to-agent` are forbidden.
+
 ## Live repository reconciliation
 
 `ruleset.json` and `repository-settings.json` are reviewed configuration artifacts. `npm run reconcile:github` is dry-run only. Applying them requires both `--apply` and `CONFIRM_GITHUB_RECONCILE=owner/repo`; the script reconciles labels, repository merge settings, and the named ruleset idempotently through `gh api`. Local verification never uses `--apply`.
