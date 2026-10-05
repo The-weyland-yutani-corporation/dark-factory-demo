@@ -21,7 +21,7 @@
     "dev:worker": "npm run dev --workspace=@dark-factory/worker",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "lint": "eslint .",
+    "lint": "tsc -b --pretty false && eslint .",
     "scan:container": "node scripts/container-policy.mjs",
     "scan:dependencies": "npm audit --omit=dev --audit-level=high",
     "scan:iac": "node scripts/iac-policy.mjs",

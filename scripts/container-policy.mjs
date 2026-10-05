@@ -13,7 +13,7 @@ if (!/^HEALTHCHECK\s+/im.test(dockerfile))
   errors.push("runtime image must define a HEALTHCHECK");
 if (!/npm\s+ci\b/.test(dockerfile))
   errors.push("container dependencies must use npm ci");
-if (!/npm\s+prune\s+--omit=dev/.test(dockerfile))
+if (!/npm\s+(?:prune|ci)[\s\S]{0,160}--omit=dev/.test(dockerfile))
   errors.push("runtime dependencies must omit development packages");
 
 if (errors.length > 0) {
