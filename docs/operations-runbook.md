@@ -75,6 +75,14 @@ After organizational approval, the corresponding live command is
 least-privilege roles, variables, private runner connectivity, alerts, and the
 authenticated alert adapter before enabling delivery workflows.
 
+For a demo that must publish images from GitHub-hosted runners, start from
+`infra/main.demo.bicepparam`. Its explicit
+`containerRegistryPublicNetworkAccessEnabled=true` opt-in enables ACR's public
+endpoint while retaining the private endpoint and keeping both the ACR admin
+user and anonymous pull disabled. The GitHub OIDC identity still requires
+registry-scoped `AcrPush`; no registry password is introduced. Production and
+private-runner deployments should omit the parameter or set it to `false`.
+
 ## Teardown planning
 
 ```sh
