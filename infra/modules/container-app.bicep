@@ -13,6 +13,7 @@ param maxReplicas int
 param cpu string
 param memory string
 param environmentVariables array
+param command array
 param healthPath string = ''
 param readinessPath string = ''
 param tags object
@@ -87,6 +88,7 @@ resource app 'Microsoft.App/containerApps@2025-01-01' = {
         {
           name: name
           image: '${registryServer}/${imageRepository}:${imageTag}'
+          command: command
           env: concat(environmentVariables, [
             {
               name: 'AZURE_CLIENT_ID'

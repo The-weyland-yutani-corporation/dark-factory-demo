@@ -25,14 +25,8 @@ param tenantId string = tenant().tenantId
 @description('Email receiver for operational alerts. Leave empty to deploy alerts disabled.')
 param alertEmailAddress string = ''
 
-@description('Container image repository for the web application.')
-param webImageRepository string = 'dark-factory-web'
-
-@description('Container image repository for the API application.')
-param apiImageRepository string = 'dark-factory-api'
-
-@description('Container image repository for the worker application.')
-param workerImageRepository string = 'dark-factory-worker'
+@description('Container image repository shared by the combined web/API application and worker.')
+param applicationImageRepository string = 'dark-factory'
 
 @description('Immutable image tag or digest-compatible tag shared by the application images.')
 param imageTag string = '0.1.0'
@@ -102,8 +96,7 @@ module monitoring 'modules/monitoring.bicep' = {
     baseName: baseName
     location: location
     telemetryPrincipalIds: [
-      identities.outputs.webPrincipalId
-      identities.outputs.apiPrincipalId
+      identities.outputs.appPrincipalId
       identities.outputs.workerPrincipalId
     ]
     tags: commonTags
@@ -128,8 +121,7 @@ module registry 'modules/registry.bicep' = {
     privateDnsZoneId: network.outputs.acrPrivateDnsZoneId
     logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsWorkspaceId
     pullIdentityPrincipalIds: [
-      identities.outputs.webPrincipalId
-      identities.outputs.apiPrincipalId
+      identities.outputs.appPrincipalId
       identities.outputs.workerPrincipalId
     ]
     tags: commonTags
@@ -146,8 +138,7 @@ module keyVault 'modules/key-vault.bicep' = {
     privateDnsZoneId: network.outputs.keyVaultPrivateDnsZoneId
     logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsWorkspaceId
     secretReaderPrincipalIds: [
-      identities.outputs.webPrincipalId
-      identities.outputs.apiPrincipalId
+      identities.outputs.appPrincipalId
       identities.outputs.workerPrincipalId
     ]
     tags: commonTags
@@ -216,39 +207,16 @@ var sharedEnvironmentVariables = [
   }
 ]
 
-module web 'modules/container-app.bicep' = if (deployApplications) {
-  name: 'webApp'
+module app 'modules/container-app.bicep' = if (deployApplications) {
+  name: 'application'
   params: {
-    name: '${containerAppBaseName}-web'
+    name: '${containerAppBaseName}-app'
     location: location
     environmentId: containerEnvironment.outputs.environmentId
-    identityId: identities.outputs.webIdentityId
-    identityClientId: identities.outputs.webClientId
+    identityId: identities.outputs.appIdentityId
+    identityClientId: identities.outputs.appClientId
     registryServer: registry.outputs.loginServer
-    imageRepository: webImageRepository
-    imageTag: imageTag
-    targetPort: 8080
-    externalIngress: true
-    minReplicas: 1
-    maxReplicas: 5
-    cpu: '0.5'
-    memory: '1Gi'
-    environmentVariables: sharedEnvironmentVariables
-    healthPath: '/'
-    tags: commonTags
-  }
-}
-
-module api 'modules/container-app.bicep' = if (deployApplications) {
-  name: 'apiApp'
-  params: {
-    name: '${containerAppBaseName}-api'
-    location: location
-    environmentId: containerEnvironment.outputs.environmentId
-    identityId: identities.outputs.apiIdentityId
-    identityClientId: identities.outputs.apiClientId
-    registryServer: registry.outputs.loginServer
-    imageRepository: apiImageRepository
+    imageRepository: applicationImageRepository
     imageTag: imageTag
     targetPort: 3000
     externalIngress: true
@@ -256,6 +224,10 @@ module api 'modules/container-app.bicep' = if (deployApplications) {
     maxReplicas: 10
     cpu: '0.5'
     memory: '1Gi'
+    command: [
+      'node'
+      'apps/api/dist/index.js'
+    ]
     environmentVariables: concat(sharedEnvironmentVariables, [
       {
         name: 'API_HOST'
@@ -285,7 +257,7 @@ module worker 'modules/container-app.bicep' = if (deployApplications) {
     identityId: identities.outputs.workerIdentityId
     identityClientId: identities.outputs.workerClientId
     registryServer: registry.outputs.loginServer
-    imageRepository: workerImageRepository
+    imageRepository: applicationImageRepository
     imageTag: imageTag
     targetPort: 3000
     externalIngress: false
@@ -293,6 +265,10 @@ module worker 'modules/container-app.bicep' = if (deployApplications) {
     maxReplicas: 3
     cpu: '0.5'
     memory: '1Gi'
+    command: [
+      'node'
+      'apps/worker/dist/index.js'
+    ]
     environmentVariables: concat(sharedEnvironmentVariables, [
       {
         name: 'WORKER_POLL_INTERVAL_MS'
@@ -319,9 +295,8 @@ output postgresServerFqdn string = postgres.outputs.serverFqdn
 output postgresDatabaseName string = postgres.outputs.databaseName
 output applicationInsightsName string = monitoring.outputs.applicationInsightsName
 output logAnalyticsWorkspaceName string = monitoring.outputs.logAnalyticsWorkspaceName
-output webUrl string = web.?outputs.url ?? ''
-output apiUrl string = api.?outputs.url ?? ''
+output applicationUrl string = app.?outputs.url ?? ''
+output applicationName string = app.?outputs.name ?? ''
 output workerName string = worker.?outputs.name ?? ''
-output webIdentityClientId string = identities.outputs.webClientId
-output apiIdentityClientId string = identities.outputs.apiClientId
+output applicationIdentityClientId string = identities.outputs.appClientId
 output workerIdentityClientId string = identities.outputs.workerClientId
