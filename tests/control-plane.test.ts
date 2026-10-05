@@ -53,28 +53,31 @@ describe("GitHub integration control plane", () => {
     expect(publisher).toContain("autonomous-integration/evidence");
   });
 
-  it("never falls back to GITHUB_TOKEN for lifecycle safe outputs", async () => {
+  it("confines Dark Factory Mage credentials to safe-output jobs", async () => {
     const files = await readdir(".github/workflows");
     const sources = files.filter((file) => file.endsWith(".md"));
     const locks = files.filter((file) => file.endsWith(".lock.yml"));
 
     for (const source of sources) {
       const content = await readFile(`.github/workflows/${source}`, "utf8");
+      expect(content).toContain("copilot-requests: write");
+      expect(content).toContain("github-app:");
+      expect(content).toContain("app-id: ${{ vars.DARK_FACTORY_MAGE_APP_ID }}");
       expect(content).toContain(
-        "github-token: ${{ secrets.GH_AW_GITHUB_TOKEN }}",
+        "private-key: ${{ secrets.DARK_FACTORY_MAGE_PRIVATE_KEY }}",
       );
-      expect(content).toContain("Require event-producing lifecycle credential");
+      expect(content).not.toContain("secrets.GH_AW_GITHUB_TOKEN");
     }
 
     for (const lock of locks) {
       const content = await readFile(`.github/workflows/${lock}`, "utf8");
       const safeOutputs = content.split(/\n {2}safe_outputs:\n/)[1] ?? "";
-      expect(safeOutputs).not.toContain(
-        "github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}",
-      );
-      expect(safeOutputs).not.toContain(
-        "GH_AW_AGENT_TOKEN || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN",
-      );
+      expect(safeOutputs).toContain("DARK_FACTORY_MAGE_PRIVATE_KEY");
+      expect(content).not.toContain("secrets.GH_AW_GITHUB_TOKEN");
+      expect(content).not.toContain("secrets.GH_AW_AGENT_TOKEN");
+      const agentJob =
+        content.split(/\n {2}agent:\n/)[1]?.split(/\n {2}\w+:\n/)[0] ?? "";
+      expect(agentJob).not.toContain("DARK_FACTORY_MAGE_PRIVATE_KEY");
     }
 
     const maintenance = await readFile(
@@ -85,9 +88,14 @@ describe("GitHub integration control plane", () => {
       maintenance
         .split(/\n {2}apply_safe_outputs:\n/)[1]
         ?.split(/\n {2}create_labels:\n/)[0] ?? "";
+    expect(replayJob).toContain("actions/create-github-app-token@");
     expect(replayJob).toContain(
-      "github-token: ${{ secrets.GH_AW_GITHUB_TOKEN }}",
+      "private-key: ${{ secrets.DARK_FACTORY_MAGE_PRIVATE_KEY }}",
+    );
+    expect(replayJob).toContain(
+      "github-token: ${{ steps.replay-token.outputs.token }}",
     );
     expect(replayJob).not.toContain("GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}");
+    expect(maintenance).not.toContain("secrets.GH_AW_GITHUB_TOKEN");
   });
 });

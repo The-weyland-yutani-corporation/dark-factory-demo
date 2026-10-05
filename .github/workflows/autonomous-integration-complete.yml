@@ -18,14 +18,22 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     env:
-      GH_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
       PR_NUMBER: ${{ github.event.pull_request.number }}
     steps:
-      - name: Require the event-producing lifecycle credential
-        shell: bash
-        run: test -n "$GH_TOKEN"
+      - name: Mint repository-scoped lifecycle token
+        id: lifecycle-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ vars.DARK_FACTORY_MAGE_APP_ID }}
+          private-key: ${{ secrets.DARK_FACTORY_MAGE_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-issues: write
+          permission-pull-requests: read
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
       - name: Reconcile autonomous goal completion
+        env:
+          GH_TOKEN: ${{ steps.lifecycle-token.outputs.token }}
         run: node scripts/integration/complete.mjs

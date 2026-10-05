@@ -42,6 +42,15 @@ jobs:
       MIGRATION_TIMEOUT_SECONDS: ${{ vars.MIGRATION_TIMEOUT_SECONDS || '900' }}
       DEPLOYMENT_ENVIRONMENT: production
     steps:
+      - name: Mint repository-scoped deployment token
+        id: deployment-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ vars.DARK_FACTORY_MAGE_APP_ID }}
+          private-key: ${{ secrets.DARK_FACTORY_MAGE_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-deployments: write
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
@@ -76,13 +85,13 @@ jobs:
       - name: Create GitHub deployment
         id: deployment
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ steps.deployment-token.outputs.token }}
           DEPLOYMENT_REF: ${{ steps.artifact.outputs.commit_sha }}
           DEPLOYMENT_DESCRIPTION: Deploy ${{ inputs.image_ref }}
         run: node scripts/delivery/github-deployment.mjs create
       - name: Mark deployment in progress
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ steps.deployment-token.outputs.token }}
           DEPLOYMENT_ID: ${{ steps.deployment.outputs.deployment_id }}
           DEPLOYMENT_STATE: in_progress
         run: node scripts/delivery/github-deployment.mjs status
@@ -94,7 +103,7 @@ jobs:
       - name: Mark deployment successful
         if: success()
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ steps.deployment-token.outputs.token }}
           DEPLOYMENT_ID: ${{ steps.deployment.outputs.deployment_id }}
           DEPLOYMENT_STATE: success
           ENVIRONMENT_URL: ${{ steps.deploy.outputs.environment_url }}
@@ -103,7 +112,7 @@ jobs:
       - name: Record failed deployment after automatic rollback
         if: failure() && steps.deployment.outputs.deployment_id != ''
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ steps.deployment-token.outputs.token }}
           DEPLOYMENT_ID: ${{ steps.deployment.outputs.deployment_id }}
           DEPLOYMENT_STATE: failure
           DEPLOYMENT_DESCRIPTION: Delivery failed and traffic was rolled back

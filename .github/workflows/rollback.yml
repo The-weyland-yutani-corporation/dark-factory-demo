@@ -34,6 +34,15 @@ jobs:
       OBSERVATION_SECONDS: ${{ vars.PRODUCTION_OBSERVATION_SECONDS || '60' }}
       DEPLOYMENT_ENVIRONMENT: production
     steps:
+      - name: Mint repository-scoped deployment token
+        id: deployment-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ vars.DARK_FACTORY_MAGE_APP_ID }}
+          private-key: ${{ secrets.DARK_FACTORY_MAGE_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-deployments: write
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
@@ -46,7 +55,7 @@ jobs:
       - name: Create rollback deployment record
         id: deployment
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ steps.deployment-token.outputs.token }}
           DEPLOYMENT_REF: ${{ github.sha }}
           DEPLOYMENT_DESCRIPTION: Restore production traffic
         run: node scripts/delivery/github-deployment.mjs create
@@ -56,7 +65,7 @@ jobs:
       - name: Record successful rollback
         if: success()
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ steps.deployment-token.outputs.token }}
           DEPLOYMENT_ID: ${{ steps.deployment.outputs.deployment_id }}
           DEPLOYMENT_STATE: success
           ENVIRONMENT_URL: ${{ steps.rollback.outputs.environment_url }}
@@ -65,9 +74,8 @@ jobs:
       - name: Record failed rollback
         if: failure() && steps.deployment.outputs.deployment_id != ''
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ steps.deployment-token.outputs.token }}
           DEPLOYMENT_ID: ${{ steps.deployment.outputs.deployment_id }}
           DEPLOYMENT_STATE: failure
           DEPLOYMENT_DESCRIPTION: Rollback failed; operator investigation required
         run: node scripts/delivery/github-deployment.mjs status
-

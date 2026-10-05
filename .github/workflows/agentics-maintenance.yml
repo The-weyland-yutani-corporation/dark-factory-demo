@@ -280,18 +280,25 @@ jobs:
             const { main } = require('${{ runner.temp }}/gh-aw/actions/check_team_member.cjs');
             await main();
 
-      - name: Require event-producing lifecycle credential
-        env:
-          GH_AW_GITHUB_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
-        run: test -n "$GH_AW_GITHUB_TOKEN"
+      - name: Mint repository-scoped replay token
+        id: replay-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ vars.DARK_FACTORY_MAGE_APP_ID }}
+          private-key: ${{ secrets.DARK_FACTORY_MAGE_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-discussions: write
+          permission-issues: write
+          permission-pull-requests: write
 
       - name: Apply Safe Outputs
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
-          GH_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.replay-token.outputs.token }}
           GH_AW_RUN_URL: ${{ inputs.run_url }}
         with:
-          github-token: ${{ secrets.GH_AW_GITHUB_TOKEN }}
+          github-token: ${{ steps.replay-token.outputs.token }}
           script: |
             const { setupGlobals } = require('${{ runner.temp }}/gh-aw/actions/setup_globals.cjs');
             setupGlobals(core, github, context, exec, io, getOctokit);

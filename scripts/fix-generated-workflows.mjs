@@ -7,9 +7,27 @@ const lockFiles = (await readdir(workflowRoot))
 
 for (const lockFile of lockFiles) {
   let lockContent = await readFile(lockFile, "utf8");
-  lockContent = lockContent.replaceAll(
+  for (const retired of [
     "${{ secrets.GH_AW_AGENT_TOKEN || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}",
-    "${{ secrets.GH_AW_AGENT_TOKEN || secrets.GH_AW_GITHUB_TOKEN }}",
+    "${{ secrets.GH_AW_GITHUB_MCP_SERVER_TOKEN || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}",
+    "${{ secrets.GH_AW_GITHUB_TOKEN }}",
+    "${{ secrets.GH_AW_GITHUB_MCP_SERVER_TOKEN }}",
+  ]) {
+    lockContent = lockContent.replaceAll(
+      retired,
+      "${{ secrets.GITHUB_TOKEN }}",
+    );
+  }
+  for (const retiredManifestEntry of [
+    '"GH_AW_AGENT_TOKEN",',
+    '"GH_AW_GITHUB_MCP_SERVER_TOKEN",',
+    '"GH_AW_GITHUB_TOKEN",',
+  ]) {
+    lockContent = lockContent.replaceAll(retiredManifestEntry, "");
+  }
+  lockContent = lockContent.replace(
+    /^#[ ]{3}- GH_AW_(?:AGENT_TOKEN|GITHUB_MCP_SERVER_TOKEN|GITHUB_TOKEN)\r?\n/gm,
+    "",
   );
   await writeFile(lockFile, lockContent);
 }
@@ -75,25 +93,35 @@ if (replayJobStart >= 0 && replayJobEnd > replayJobStart) {
     .replace("      contents: write", "      contents: read")
     .replace("      discussions: write", "      discussions: read")
     .replace("      issues: write", "      issues: read")
-    .replace("      pull-requests: write", "      pull-requests: read")
-    .replace(
+    .replace("      pull-requests: write", "      pull-requests: read");
+  if (!replayJob.includes("        id: replay-token")) {
+    replayJob = replayJob.replace(
       "      - name: Apply Safe Outputs",
       [
-        "      - name: Require event-producing lifecycle credential",
-        "        env:",
-        "          GH_AW_GITHUB_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}",
-        '        run: test -n "$GH_AW_GITHUB_TOKEN"',
+        "      - name: Mint repository-scoped replay token",
+        "        id: replay-token",
+        "        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0",
+        "        with:",
+        "          app-id: ${{ vars.DARK_FACTORY_MAGE_APP_ID }}",
+        "          private-key: ${{ secrets.DARK_FACTORY_MAGE_PRIVATE_KEY }}",
+        "          owner: ${{ github.repository_owner }}",
+        "          repositories: ${{ github.event.repository.name }}",
+        "          permission-discussions: write",
+        "          permission-issues: write",
+        "          permission-pull-requests: write",
         "",
         "      - name: Apply Safe Outputs",
       ].join("\n"),
-    )
+    );
+  }
+  replayJob = replayJob
     .replace(
       "          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}",
-      "          GH_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}",
+      "          GH_TOKEN: ${{ steps.replay-token.outputs.token }}",
     )
     .replace(
       "          github-token: ${{ secrets.GITHUB_TOKEN }}\n          script: |\n            const { setupGlobals } = require('${{ runner.temp }}/gh-aw/actions/setup_globals.cjs');\n            setupGlobals(core, github, context, exec, io, getOctokit);\n            const { main } = require('${{ runner.temp }}/gh-aw/actions/apply_safe_outputs_replay.cjs');",
-      "          github-token: ${{ secrets.GH_AW_GITHUB_TOKEN }}\n          script: |\n            const { setupGlobals } = require('${{ runner.temp }}/gh-aw/actions/setup_globals.cjs');\n            setupGlobals(core, github, context, exec, io, getOctokit);\n            const { main } = require('${{ runner.temp }}/gh-aw/actions/apply_safe_outputs_replay.cjs');",
+      "          github-token: ${{ steps.replay-token.outputs.token }}\n          script: |\n            const { setupGlobals } = require('${{ runner.temp }}/gh-aw/actions/setup_globals.cjs');\n            setupGlobals(core, github, context, exec, io, getOctokit);\n            const { main } = require('${{ runner.temp }}/gh-aw/actions/apply_safe_outputs_replay.cjs');",
     );
   content =
     content.slice(0, replayJobStart) + replayJob + content.slice(replayJobEnd);

@@ -44,9 +44,10 @@ IaC, secret, and built-container scans. All external actions are commit-pinned.
 Agentic workflow Markdown sources and generated lock workflows are kept in sync
 by `gh aw compile`; generated maintenance output is deterministically hardened
 with concurrency and timeout bounds before the synchronization diff is checked.
-Lifecycle safe outputs never use the built-in `GITHUB_TOKEN`: every agentic
-workflow fails before inference unless the event-producing
-`GH_AW_GITHUB_TOKEN` repository secret is present.
+Copilot inference is billed to the organization through
+`copilot-requests: write`. Lifecycle safe-output jobs mint short-lived,
+repository-scoped installation tokens for the Dark Factory Mage GitHub App;
+the App private key is never provided to the reasoning job.
 
 The API exposes `GET /healthz`, `GET /readyz`, `GET /version`, and
 `POST /api/policies/evaluate`. `GET /api/factory/overview` powers the control

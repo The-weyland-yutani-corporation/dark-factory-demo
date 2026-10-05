@@ -41,16 +41,24 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
-      GH_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
       HEAD_SHA: ${{ github.event.workflow_run.pull_requests[0].head.sha || github.event.workflow_run.head_sha || inputs.head_sha }}
       PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number || inputs.pull_number }}
       INTEGRATION_SNAPSHOT: .integration/snapshot.json
       INTEGRATION_RESULT: .integration/policy-result.json
       SELF_MODIFICATION_RESULT: .integration/self-modification-verdict.json
     steps:
-      - name: Require the event-producing lifecycle credential
-        shell: bash
-        run: test -n "$GH_TOKEN"
+      - name: Mint repository-scoped lifecycle token
+        id: lifecycle-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ vars.DARK_FACTORY_MAGE_APP_ID }}
+          private-key: ${{ secrets.DARK_FACTORY_MAGE_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-actions: read
+          permission-contents: read
+          permission-issues: write
+          permission-pull-requests: write
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
@@ -64,9 +72,12 @@ jobs:
         run: npx tsc -b packages/contracts packages/policy-engine --pretty false
       - name: Collect current pull request policy inputs
         id: collect
+        env:
+          GH_TOKEN: ${{ steps.lifecycle-token.outputs.token }}
         run: node scripts/integration/collect.mjs
       - name: Download evidence for the exact head SHA
         env:
+          GH_TOKEN: ${{ steps.lifecycle-token.outputs.token }}
           PULL_HEAD_SHA: ${{ env.HEAD_SHA }}
         run: |
           set -euo pipefail
@@ -131,6 +142,8 @@ jobs:
         run: exit 1
       - name: Enqueue the unchanged pull request
         if: steps.policy.outputs.allowed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.lifecycle-token.outputs.token }}
         run: node scripts/integration/merge.mjs
 
   merge-group:

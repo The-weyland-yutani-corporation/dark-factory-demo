@@ -31,7 +31,7 @@ delivery workflows, incident feedback loop, and self-modification guardrails.
 | Tenant            | Contoso (`1cf61a60-a877-46a7-86bc-a8f76b6ab441`)                        |
 | Location          | `eastus2`                                                               |
 | Resource group    | New: `rg-dark-factory-demo-eus2`                                        |
-| GitHub repository | `VeVarunSharma/dark-factory-demo`                                       |
+| GitHub repository | `The-weyland-yutani-corporation/dark-factory-demo`                      |
 | Default branch    | `main`                                                                  |
 
 `eastus2` was selected because the subscription already has workloads in that
@@ -221,7 +221,7 @@ results, and timestamps here before changing the plan status to `Validated`.
   (`6ab9e067-26ba-469d-a1de-4b5a1571bd3f`).
 - GitHub deployment identity: create a dedicated user-assigned identity.
 - Federated subject:
-  `repo:VeVarunSharma/dark-factory-demo:ref:refs/heads/main`.
+  `repo:The-weyland-yutani-corporation/dark-factory-demo:ref:refs/heads/main`.
 - Deployment identity roles:
   - `AcrPush` on the registry.
   - The least-privilege Container Apps update role supported by the target
