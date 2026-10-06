@@ -17,7 +17,7 @@ tools:
     toolsets: [context, issues]
 safe-outputs:
   github-app:
-    client-id: ${{ vars.DARK_FACTORY_MAGE_APP_CLIENT_ID }}
+    client-id: ${{ secrets.DARK_FACTORY_MAGE_APP_CLIENT_ID }}
     private-key: ${{ secrets.DARK_FACTORY_MAGE_APP_PRIVATE_KEY }}
   add-comment:
     max: 1

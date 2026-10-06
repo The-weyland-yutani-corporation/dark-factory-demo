@@ -32,8 +32,8 @@ After apply, rerun the dry run and `npm run verify:agentic-sync`.
 
 Before enabling agentic or autonomous integration workflows, install the
 organization-owned **Dark Factory Mage** GitHub App on this repository. Set
-organization variable `DARK_FACTORY_MAGE_APP_CLIENT_ID` and organization
-secret `DARK_FACTORY_MAGE_APP_PRIVATE_KEY` must be visible to this repository. Do
+organization secrets `DARK_FACTORY_MAGE_APP_CLIENT_ID` and
+`DARK_FACTORY_MAGE_APP_PRIVATE_KEY` must be visible to this repository. Do
 not expose `DARK_FACTORY_MAGE_APP_CLIENT_SECRET`; installation-token
 authentication does not use the OAuth client secret. Do not store the
 key in source control. The installation needs only the repository permissions

@@ -19,7 +19,7 @@ tools:
     toolsets: [context, repos, issues, pull_requests, actions]
 safe-outputs:
   github-app:
-    client-id: ${{ vars.DARK_FACTORY_MAGE_APP_CLIENT_ID }}
+    client-id: ${{ secrets.DARK_FACTORY_MAGE_APP_CLIENT_ID }}
     private-key: ${{ secrets.DARK_FACTORY_MAGE_APP_PRIVATE_KEY }}
   create-issue:
     max: 1

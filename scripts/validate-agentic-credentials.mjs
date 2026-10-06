@@ -14,7 +14,7 @@ for (const source of sources) {
   for (const expected of [
     "copilot-requests: write",
     "github-app:",
-    "client-id: ${{ vars.DARK_FACTORY_MAGE_APP_CLIENT_ID }}",
+    "client-id: ${{ secrets.DARK_FACTORY_MAGE_APP_CLIENT_ID }}",
     "private-key: ${{ secrets.DARK_FACTORY_MAGE_APP_PRIVATE_KEY }}",
   ]) {
     if (!content.includes(expected)) {
