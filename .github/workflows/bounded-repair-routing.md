@@ -22,8 +22,8 @@ tools:
     toolsets: [context, repos, issues, pull_requests, actions]
 safe-outputs:
   github-app:
-    app-id: ${{ vars.DARK_FACTORY_MAGE_APP_ID }}
-    private-key: ${{ secrets.DARK_FACTORY_MAGE_PRIVATE_KEY }}
+    client-id: ${{ vars.DARK_FACTORY_MAGE_APP_CLIENT_ID }}
+    private-key: ${{ secrets.DARK_FACTORY_MAGE_APP_PRIVATE_KEY }}
   push-to-pull-request-branch:
     target: "*"
     required-title-prefix: "[Goal] "

@@ -14,8 +14,8 @@ for (const source of sources) {
   for (const expected of [
     "copilot-requests: write",
     "github-app:",
-    "app-id: ${{ vars.DARK_FACTORY_MAGE_APP_ID }}",
-    "private-key: ${{ secrets.DARK_FACTORY_MAGE_PRIVATE_KEY }}",
+    "client-id: ${{ vars.DARK_FACTORY_MAGE_APP_CLIENT_ID }}",
+    "private-key: ${{ secrets.DARK_FACTORY_MAGE_APP_PRIVATE_KEY }}",
   ]) {
     if (!content.includes(expected)) {
       errors.push(`${source} is missing ${expected}`);
@@ -40,10 +40,10 @@ for (const lock of locks) {
   const agentJob =
     content.split(/\n {2}agent:\n/)[1]?.split(/\n {2}[A-Za-z0-9_-]+:\n/)[0] ??
     "";
-  if (!safeOutputJob.includes("DARK_FACTORY_MAGE_PRIVATE_KEY")) {
+  if (!safeOutputJob.includes("DARK_FACTORY_MAGE_APP_PRIVATE_KEY")) {
     errors.push(`${lock} does not mint a GitHub App safe-output token`);
   }
-  if (agentJob.includes("DARK_FACTORY_MAGE_PRIVATE_KEY")) {
+  if (agentJob.includes("DARK_FACTORY_MAGE_APP_PRIVATE_KEY")) {
     errors.push(`${lock} exposes the App private key to the reasoning job`);
   }
   if (
@@ -122,7 +122,7 @@ const replayJob =
     ?.split(/\n {2}create_labels:\n/)[0] ?? "";
 if (
   !replayJob.includes(appAction) ||
-  !replayJob.includes("DARK_FACTORY_MAGE_PRIVATE_KEY") ||
+  !replayJob.includes("DARK_FACTORY_MAGE_APP_PRIVATE_KEY") ||
   !replayJob.includes("github-token: ${{ steps.replay-token.outputs.token }}")
 ) {
   errors.push(
@@ -151,17 +151,14 @@ function base64url(value) {
 }
 
 async function validateRuntime() {
-  const appId = process.env.DARK_FACTORY_MAGE_APP_ID?.trim();
-  const privateKeyPath = process.env.DARK_FACTORY_MAGE_PRIVATE_KEY_PATH?.trim();
+  const clientId = process.env.DARK_FACTORY_MAGE_APP_CLIENT_ID?.trim();
+  const privateKeyPath =
+    process.env.DARK_FACTORY_MAGE_APP_PRIVATE_KEY_PATH?.trim();
   const repository = process.env.GITHUB_REPOSITORY?.trim();
-  if (!appId || !privateKeyPath || !repository) {
+  if (!clientId || !privateKeyPath || !repository) {
     errors.push(
-      "DARK_FACTORY_MAGE_APP_ID, DARK_FACTORY_MAGE_PRIVATE_KEY_PATH, and GITHUB_REPOSITORY are required for runtime validation",
+      "DARK_FACTORY_MAGE_APP_CLIENT_ID, DARK_FACTORY_MAGE_APP_PRIVATE_KEY_PATH, and GITHUB_REPOSITORY are required for runtime validation",
     );
-    return;
-  }
-  if (appId !== "5122991") {
-    errors.push("DARK_FACTORY_MAGE_APP_ID must be 5122991");
     return;
   }
   const [owner, name, extra] = repository.split("/");
@@ -175,7 +172,7 @@ async function validateRuntime() {
     const now = Math.floor(Date.now() / 1000);
     const header = base64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
     const payload = base64url(
-      JSON.stringify({ iat: now - 60, exp: now + 540, iss: appId }),
+      JSON.stringify({ iat: now - 60, exp: now + 540, iss: clientId }),
     );
     const signer = createSign("RSA-SHA256");
     signer.update(`${header}.${payload}`);

@@ -45,7 +45,7 @@ for (const lockFile of lockFiles) {
   if (codeWritingOutput) {
     for (const expected of [
       codeWritingOutput,
-      "DARK_FACTORY_MAGE_PRIVATE_KEY",
+      "DARK_FACTORY_MAGE_APP_PRIVATE_KEY",
       "permission-contents: write",
       "permission-workflows: write",
       "GH_AW_CI_TRIGGER_TOKEN: ${{ steps.safe-outputs-app-token.outputs.token || '' }}",
@@ -131,8 +131,8 @@ if (replayJobStart >= 0 && replayJobEnd > replayJobStart) {
         "        id: replay-token",
         "        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0",
         "        with:",
-        "          app-id: ${{ vars.DARK_FACTORY_MAGE_APP_ID }}",
-        "          private-key: ${{ secrets.DARK_FACTORY_MAGE_PRIVATE_KEY }}",
+        "          client-id: ${{ vars.DARK_FACTORY_MAGE_APP_CLIENT_ID }}",
+        "          private-key: ${{ secrets.DARK_FACTORY_MAGE_APP_PRIVATE_KEY }}",
         "          owner: ${{ github.repository_owner }}",
         "          repositories: ${{ github.event.repository.name }}",
         "          permission-discussions: write",

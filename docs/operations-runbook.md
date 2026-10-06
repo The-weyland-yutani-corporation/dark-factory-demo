@@ -32,8 +32,10 @@ After apply, rerun the dry run and `npm run verify:agentic-sync`.
 
 Before enabling agentic or autonomous integration workflows, install the
 organization-owned **Dark Factory Mage** GitHub App on this repository. Set
-repository variable `DARK_FACTORY_MAGE_APP_ID` to `5122991` and repository
-secret `DARK_FACTORY_MAGE_PRIVATE_KEY` to its PEM private key. Do not store the
+organization variable `DARK_FACTORY_MAGE_APP_CLIENT_ID` and organization
+secret `DARK_FACTORY_MAGE_APP_PRIVATE_KEY` must be visible to this repository. Do
+not expose `DARK_FACTORY_MAGE_APP_CLIENT_SECRET`; installation-token
+authentication does not use the OAuth client secret. Do not store the
 key in source control. The installation needs only the repository permissions
 used here: Metadata read, Contents read/write, Workflows read/write, Actions
 read/write, Deployments read/write, Issues read/write, and Pull requests
@@ -54,8 +56,8 @@ Validate the compiled credential boundary without exposing the secret:
 
 ```sh
 npm run verify:agentic-credentials
-DARK_FACTORY_MAGE_APP_ID=5122991 \
-DARK_FACTORY_MAGE_PRIVATE_KEY_PATH=path/to/private-key.pem \
+DARK_FACTORY_MAGE_APP_CLIENT_ID=... \
+DARK_FACTORY_MAGE_APP_PRIVATE_KEY_PATH=path/to/private-key.pem \
 GITHUB_REPOSITORY=The-weyland-yutani-corporation/dark-factory-demo \
   node scripts/validate-agentic-credentials.mjs --runtime
 gh aw compile --strict --validate --poutine
@@ -177,14 +179,14 @@ key, while fired and resolved states use different deduplication keys.
 
 ## Troubleshooting
 
-| Symptom                        | Action                                                                                                            |
-| ------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
-| API exits at startup           | Run `npm run config:validate`; fix all reported values.                                                           |
-| Factory endpoint returns 503   | Use demo mode locally or provide a production `FactoryOperationsAdapter`.                                         |
-| Dashboard says API unavailable | Check `/healthz`, `/readyz`, browser CORS, and `VITE_API_BASE_URL`.                                               |
-| GitHub dry run fails           | Run `gh auth status`; confirm repository access and ruleset permissions.                                          |
-| Agentic sync differs           | Install the pinned `gh aw` extension, compile, then run `npm run verify:agentic-sync`.                            |
-| Lifecycle workflow stops early | Validate the Dark Factory Mage App installation, `DARK_FACTORY_MAGE_APP_ID`, and `DARK_FACTORY_MAGE_PRIVATE_KEY`. |
-| Azure what-if fails            | Confirm subscription, resource group, Bicep compiler, parameter file, and RBAC.                                   |
-| Delivery regression            | Use the rollback workflow, preserve the correlation envelope, and verify the prior revision.                      |
-| Metrics look stale             | Compare `generatedAt` and adapter source; demo data is fixed except for generation time.                          |
+| Symptom                        | Action                                                                                                                       |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| API exits at startup           | Run `npm run config:validate`; fix all reported values.                                                                      |
+| Factory endpoint returns 503   | Use demo mode locally or provide a production `FactoryOperationsAdapter`.                                                    |
+| Dashboard says API unavailable | Check `/healthz`, `/readyz`, browser CORS, and `VITE_API_BASE_URL`.                                                          |
+| GitHub dry run fails           | Run `gh auth status`; confirm repository access and ruleset permissions.                                                     |
+| Agentic sync differs           | Install the pinned `gh aw` extension, compile, then run `npm run verify:agentic-sync`.                                       |
+| Lifecycle workflow stops early | Validate the Dark Factory Mage App installation, `DARK_FACTORY_MAGE_APP_CLIENT_ID`, and `DARK_FACTORY_MAGE_APP_PRIVATE_KEY`. |
+| Azure what-if fails            | Confirm subscription, resource group, Bicep compiler, parameter file, and RBAC.                                              |
+| Delivery regression            | Use the rollback workflow, preserve the correlation envelope, and verify the prior revision.                                 |
+| Metrics look stale             | Compare `generatedAt` and adapter source; demo data is fixed except for generation time.                                     |
