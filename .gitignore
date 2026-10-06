@@ -16,3 +16,6 @@ npm-debug.log*
 .vite/
 .stryker-tmp/
 .self-modification/
+.azure/validate-status.json
+infra/main.json
+infra/subscription.json

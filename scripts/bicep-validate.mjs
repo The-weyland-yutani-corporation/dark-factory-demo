@@ -39,6 +39,15 @@ const builds = [
     args: ["build", "infra/main.bicep", "--outfile", "reports/bicep/main.json"],
     label: "infra/main.bicep",
   },
+  {
+    args: [
+      "build",
+      "infra/subscription.bicep",
+      "--outfile",
+      "reports/bicep/subscription.json",
+    ],
+    label: "infra/subscription.bicep",
+  },
   ...(await readdir("infra"))
     .filter((file) => file.endsWith(".bicepparam"))
     .sort()

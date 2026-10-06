@@ -1,6 +1,6 @@
 # Azure Deployment Plan
 
-> **Status:** Ready for Validation
+> **Status:** Validated
 
 Generated: 2026-10-04
 
@@ -185,23 +185,27 @@ Quota sources:
 
 ### Phase 3: Validation
 
-- [ ] Invoke `azure-validate`.
+- [x] Invoke `azure-validate`.
+- [x] Bicep recipe validation passes.
+  - [x] Core Azure CLI/authentication/Bicep build/deployment validation/what-if
+        passes using the shared `validate-deployment.ps1` helper.
+  - [x] Bicep linting passes.
+  - [x] Azure Policy assignments are retrieved and validated for the target
+        subscription and resource group.
 - [x] All local validation checks pass.
   - [x] Core local validation: Bicep compiler build for `infra/main.bicep`
         and both checked-in `.bicepparam` files.
   - [x] Lint, typecheck, build, unit tests, operations tests, IaC policy,
         secret scan, and production dependency audit.
-  - [ ] Azure deployment validation and what-if against the target resource
-        group (live prerequisite; intentionally not run for this no-deployment
-        task).
-  - [ ] Azure Policy validation against the target subscription (live
-        prerequisite).
-- [ ] Validate Bicep and parameters.
-- [ ] Run resource-group deployment validation and what-if.
-- [ ] Validate Azure role prerequisites.
-- [ ] Validate GitHub credential, variables, ruleset, workflows, and runner.
-- [ ] Populate the Validation Proof section.
-- [ ] Set status to `Validated` only through `azure-validate`.
+  - [x] Subscription-scope deployment validation and what-if against the target
+        resource group bootstrap.
+  - [x] Azure Policy assignments and current compliance summary retrieved.
+- [x] Validate Bicep and parameters.
+- [x] Run subscription deployment validation and what-if.
+- [x] Validate Azure role prerequisites.
+- [x] Validate GitHub credential, variables, ruleset, and workflows.
+- [x] Populate the Validation Proof section.
+- [x] Set status to `Validated` only through `azure-validate`.
 
 ### Phase 4: Deployment
 
@@ -218,26 +222,28 @@ Quota sources:
 
 ## 8. Validation Proof
 
-| Check                    | Command Run                                                                  | Result                                              | Timestamp  |
-| ------------------------ | ---------------------------------------------------------------------------- | --------------------------------------------------- | ---------- |
-| Alert adapter tests      | `npx vitest run tests/alert-adapter.test.ts`                                 | Passed: 5 tests                                     | 2026-10-05 |
-| Full unit tests          | `npm run test:unit`                                                          | Passed: 11 files, 49 tests                          | 2026-10-05 |
-| Operations integration   | `npm run test:operations`                                                    | Passed: 7 tests                                     | 2026-10-05 |
-| Lint                     | `npm run lint`                                                               | Passed                                              | 2026-10-05 |
-| TypeScript               | `npm run typecheck`                                                          | Passed                                              | 2026-10-05 |
-| Production build         | `npm run build`                                                              | Passed                                              | 2026-10-05 |
-| Formatting               | `npm run format:check`                                                       | Passed                                              | 2026-10-05 |
-| Bicep compile            | `npm run verify:bicep`                                                       | Passed: main and both checked-in parameter files    | 2026-10-05 |
-| IaC policy               | `npm run scan:iac`                                                           | Passed: 11 Bicep files                              | 2026-10-05 |
-| Secret scan              | `npm run scan:secrets`                                                       | Passed: 176 files, no private key or token material | 2026-10-05 |
-| Production dependencies  | `npm run scan:dependencies`                                                  | Passed: 0 vulnerabilities                           | 2026-10-05 |
-| Static RBAC review       | `infra/modules/alert-adapter.bicep` and `infra/modules/key-vault.bicep`      | Passed: resource-scoped data-plane roles            | 2026-10-05 |
-| Azure validate / what-if | Not run: requires live target resource group and was outside no-deploy scope | Live prerequisite                                   | 2026-10-05 |
-| Azure Policy validation  | Not run against subscription                                                 | Live prerequisite                                   | 2026-10-05 |
+| Check                               | Command Run                                                                                                                | Result                                                                                                      | Timestamp  |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ---------- |
+| Alert adapter tests                 | `npx vitest run tests/alert-adapter.test.ts`                                                                               | Passed: 5 tests                                                                                             | 2026-10-05 |
+| Full unit tests                     | `npm run test:unit`                                                                                                        | Passed: 11 files, 50 tests                                                                                  | 2026-10-06 |
+| Operations integration              | `npm run test:operations`                                                                                                  | Passed: 7 tests                                                                                             | 2026-10-05 |
+| Lint                                | `npm run lint`                                                                                                             | Passed                                                                                                      | 2026-10-05 |
+| TypeScript                          | `npm run typecheck`                                                                                                        | Passed                                                                                                      | 2026-10-05 |
+| Production build                    | `npm run build`                                                                                                            | Passed                                                                                                      | 2026-10-05 |
+| Formatting                          | `npm run format:check`                                                                                                     | Passed                                                                                                      | 2026-10-05 |
+| Bicep compile                       | `npm run verify:bicep`                                                                                                     | Passed: resource-group/subscription templates and all parameter files                                       | 2026-10-06 |
+| Bicep lint                          | `az bicep lint --file infra/subscription.bicep` and `infra/main.bicep`                                                     | Passed with no diagnostics                                                                                  | 2026-10-06 |
+| IaC policy                          | `npm run scan:iac`                                                                                                         | Passed: 12 Bicep files                                                                                      | 2026-10-06 |
+| Secret scan                         | `npm run scan:secrets`                                                                                                     | Passed: 176 files, no private key or token material                                                         | 2026-10-05 |
+| Production dependencies             | `npm audit --omit=dev --audit-level=high`                                                                                  | Passed: 0 vulnerabilities                                                                                   | 2026-10-06 |
+| Static RBAC review                  | All `Microsoft.Authorization/roleAssignments` in `infra/modules`                                                           | Passed: least-privilege resource-scoped data-plane roles                                                    | 2026-10-06 |
+| Azure deployment validate / what-if | `validate-deployment.ps1 -Scope sub ... -Template infra/subscription.bicep -Parameters infra/subscription.demo.bicepparam` | Passed: Create 40, Modify 0, Delete 0                                                                       | 2026-10-06 |
+| Azure Policy validation             | `az policy assignment list` and `az policy state summarize`                                                                | Assignments retrieved; existing subscription baseline findings do not block the validated 40-create what-if | 2026-10-06 |
+| GitHub App authentication           | Organization PR run `37506380878`, failed-job rerun                                                                        | Passed: agent, threat detection, App safe outputs, conclusion                                               | 2026-10-06 |
+| GitHub control-plane dry run        | `GITHUB_REPOSITORY=... npm run reconcile:github`                                                                           | Passed: 23 labels, repository merge settings, and ruleset previewed; no mutations                           | 2026-10-06 |
 
-**Validated by:** Local repository validation through `azure-validate`; live
-Azure validation remains pending.
-**Validation timestamp:** 2026-10-05
+**Validated by:** `azure-validate` workflow.
+**Validation timestamp:** 2026-10-06
 
 ## 9. Identity, RBAC, and GitHub Configuration
 
@@ -254,6 +260,20 @@ Azure validation remains pending.
   Key Vault DNS resolution.
 - **Issues:** No subscription- or resource-group-scoped runtime roles were
   introduced. Live role verification remains a post-deployment prerequisite.
+
+### Application and worker role assignment verification
+
+- **Status:** Static verification complete.
+- **Container registry:** Application and worker identities receive `AcrPull`
+  scoped only to the registry.
+- **Key Vault:** Application and worker identities receive Key Vault Secrets
+  User scoped only to the vault.
+- **Telemetry:** Application, worker, and alert-adapter identities receive
+  Monitoring Metrics Publisher scoped only to Application Insights.
+- **PostgreSQL:** Entra-only authentication is configured. Database principals
+  and grants are post-deployment PostgreSQL data-plane operations rather than
+  Azure RBAC.
+- **Issues:** No workload data-plane role is assigned at subscription scope.
 
 ### Azure identity
 
