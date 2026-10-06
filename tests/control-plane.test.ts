@@ -96,9 +96,11 @@ describe("GitHub integration control plane", () => {
       const content = await readFile(`.github/workflows/${source}`, "utf8");
       expect(content).toContain("copilot-requests: write");
       expect(content).toContain("github-app:");
-      expect(content).toContain("app-id: ${{ vars.DARK_FACTORY_MAGE_APP_ID }}");
       expect(content).toContain(
-        "private-key: ${{ secrets.DARK_FACTORY_MAGE_PRIVATE_KEY }}",
+        "client-id: ${{ secrets.DARK_FACTORY_MAGE_APP_CLIENT_ID }}",
+      );
+      expect(content).toContain(
+        "private-key: ${{ secrets.DARK_FACTORY_MAGE_APP_PRIVATE_KEY }}",
       );
       expect(content).not.toContain("secrets.GH_AW_GITHUB_TOKEN");
       expect(content).not.toContain("assign-to-agent:");
@@ -108,14 +110,14 @@ describe("GitHub integration control plane", () => {
     for (const lock of locks) {
       const content = await readFile(`.github/workflows/${lock}`, "utf8");
       const safeOutputs = content.split(/\n {2}safe_outputs:\n/)[1] ?? "";
-      expect(safeOutputs).toContain("DARK_FACTORY_MAGE_PRIVATE_KEY");
+      expect(safeOutputs).toContain("DARK_FACTORY_MAGE_APP_PRIVATE_KEY");
       expect(content).not.toContain("secrets.GH_AW_GITHUB_TOKEN");
       expect(content).not.toContain("secrets.GH_AW_AGENT_TOKEN");
       expect(content).not.toContain("assign-to-agent");
       expect(content).not.toContain("assign_to_agent");
       const agentJob =
         content.split(/\n {2}agent:\n/)[1]?.split(/\n {2}\w+:\n/)[0] ?? "";
-      expect(agentJob).not.toContain("DARK_FACTORY_MAGE_PRIVATE_KEY");
+      expect(agentJob).not.toContain("DARK_FACTORY_MAGE_APP_PRIVATE_KEY");
     }
 
     const maintenance = await readFile(
@@ -128,7 +130,7 @@ describe("GitHub integration control plane", () => {
         ?.split(/\n {2}create_labels:\n/)[0] ?? "";
     expect(replayJob).toContain("actions/create-github-app-token@");
     expect(replayJob).toContain(
-      "private-key: ${{ secrets.DARK_FACTORY_MAGE_PRIVATE_KEY }}",
+      "private-key: ${{ secrets.DARK_FACTORY_MAGE_APP_PRIVATE_KEY }}",
     );
     expect(replayJob).toContain(
       "github-token: ${{ steps.replay-token.outputs.token }}",
