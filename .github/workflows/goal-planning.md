@@ -2,6 +2,7 @@
 on:
   issue_comment:
     types: [created]
+  bots: ["dark-factory-mage[bot]"]
 permissions:
   copilot-requests: write
   contents: read
