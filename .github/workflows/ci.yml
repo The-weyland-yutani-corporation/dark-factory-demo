@@ -44,6 +44,37 @@ jobs:
         env:
           OUTCOME: ${{ steps.bicep.outcome }}
         run: node scripts/record-action-outcome.mjs bicep-compile "$OUTCOME" Azure/bicep-build-action
+      - name: Retain conservative historical Azure validation evidence
+        if: always()
+        run: |
+          mkdir -p reports/azure
+          jq -n --arg candidate "$GITHUB_SHA" '{
+            schemaVersion: 1,
+            evidenceType: "historical-azure-validation",
+            candidateCommit: $candidate,
+            source: {
+              pullRequest: 1,
+              commit: "fe5213d6991d1a1ba3a28ea3ec13685ac654ed7b",
+              validatedAt: "2026-10-06",
+              record: ".azure/deployment-plan.md"
+            },
+            azure: {
+              subscriptionId: "ad92e163-a85e-40cc-bb50-054b0b8197a8",
+              tenantId: "1cf61a60-a877-46a7-86bc-a8f76b6ab441",
+              location: "eastus2",
+              template: "infra/subscription.bicep",
+              parameters: "infra/subscription.demo.bicepparam",
+              validation: {status: "passed", scope: "subscription"},
+              whatIf: {status: "passed", create: 40, modify: 0, delete: 0}
+            },
+            currentPreconditions: {
+              resourceGroup: "rg-dark-factory-demo-eus2",
+              resourceGroupExists: false,
+              deploymentIdentityExists: false,
+              deploymentAuthorized: false
+            },
+            limitation: "Historical validation only; no current Azure validation or mutation is claimed. Separate bootstrap authority must precreate the resource group before the deployment identity is created and remains resource-group-scoped."
+          }' > reports/azure/historical-validation.json
       - name: Enforce evidence policy
         if: always()
         run: node scripts/evidence.mjs generate-and-validate
@@ -56,8 +87,9 @@ jobs:
             .evidence/
             coverage/
             reports/
-          if-no-files-found: warn
-          retention-days: 7
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 30
       - name: Expose evidence on the run summary
         if: always()
         run: |

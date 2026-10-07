@@ -19,7 +19,10 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - run: docker build --tag dark-factory:${{ github.sha }} .
+      - run: mkdir -p reports/security/trivy
       - name: Scan repository dependencies, secrets, and IaC
+        id: filesystem
+        continue-on-error: true
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
         with:
           scan-type: fs
@@ -27,11 +30,28 @@ jobs:
           scanners: vuln,secret,misconfig
           severity: HIGH,CRITICAL
           ignore-unfixed: true
+          format: sarif
+          output: reports/security/trivy/filesystem.sarif
           exit-code: "1"
       - name: Scan built container
+        id: container
+        continue-on-error: true
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
         with:
           image-ref: dark-factory:${{ github.sha }}
           severity: HIGH,CRITICAL
           ignore-unfixed: true
+          format: sarif
+          output: reports/security/trivy/container.sarif
           exit-code: "1"
+      - name: Publish exact-head Trivy evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: trivy-${{ github.sha }}-${{ github.run_attempt }}
+          path: reports/security/trivy/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Enforce Trivy outcomes
+        if: steps.filesystem.outcome != 'success' || steps.container.outcome != 'success'
+        run: exit 1

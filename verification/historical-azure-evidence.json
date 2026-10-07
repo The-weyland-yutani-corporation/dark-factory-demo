@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "evidenceType": "historical-azure-validation",
+  "source": {
+    "pullRequest": 1,
+    "commit": "fe5213d6991d1a1ba3a28ea3ec13685ac654ed7b",
+    "validatedAt": "2026-10-06",
+    "record": ".azure/deployment-plan.md"
+  },
+  "azure": {
+    "subscriptionId": "ad92e163-a85e-40cc-bb50-054b0b8197a8",
+    "tenantId": "1cf61a60-a877-46a7-86bc-a8f76b6ab441",
+    "location": "eastus2",
+    "template": "infra/subscription.bicep",
+    "parameters": "infra/subscription.demo.bicepparam",
+    "validation": {
+      "status": "passed",
+      "scope": "subscription"
+    },
+    "whatIf": {
+      "status": "passed",
+      "create": 40,
+      "modify": 0,
+      "delete": 0
+    }
+  },
+  "currentPreconditions": {
+    "resourceGroup": "rg-dark-factory-demo-eus2",
+    "resourceGroupExists": false,
+    "deploymentIdentityExists": false,
+    "deploymentAuthorized": false
+  },
+  "limitation": "This exact-head artifact conservatively retains historical validation only. It does not claim a current deployment validation or authorize Azure mutation. Separate bootstrap authority must precreate the resource group before the deployment identity is created and remains resource-group-scoped."
+}

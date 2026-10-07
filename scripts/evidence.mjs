@@ -17,6 +17,7 @@ async function existingArtifacts() {
     "reports/bicep/main.json",
     "reports/trivy/filesystem.sarif",
     "reports/trivy/container.sarif",
+    "reports/azure/historical-validation.json",
   ];
   const artifacts = [];
   for (const candidate of candidates) {

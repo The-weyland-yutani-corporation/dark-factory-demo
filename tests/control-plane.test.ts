@@ -36,6 +36,32 @@ describe("GitHub integration control plane", () => {
     );
   });
 
+  it("retains hidden exact-head and security evidence for 30 days", async () => {
+    const workflows = await Promise.all(
+      ["ci.yml", "code-security.yml", "container-security.yml"].map((name) =>
+        readFile(`.github/workflows/${name}`, "utf8"),
+      ),
+    );
+    expect(workflows[0]).toContain("include-hidden-files: true");
+    for (const workflow of workflows) {
+      expect(workflow).toContain("retention-days: 30");
+    }
+    expect(workflows[1]).toContain("dependency-audit.json");
+    expect(workflows[1]).toContain("codeql-summary.json");
+    expect(workflows[2]).toContain("filesystem.sarif");
+    expect(workflows[2]).toContain("container.sarif");
+  });
+
+  it("reconciles controls in bootstrap-safe order with durable JSON", async () => {
+    const script = await readFile("scripts/reconcile-github.mjs", "utf8");
+    expect(script).toContain(
+      '["labels", "production-environment", "merge-settings", "ruleset"]',
+    );
+    expect(script).toContain("reports/reconciliation");
+    expect(script).toContain("preConverged");
+    expect(script).toContain("converged");
+  });
+
   it("publishes the integration context for pull heads and merge groups", async () => {
     const workflow = await readFile(
       ".github/workflows/autonomous-integration.yml",
@@ -109,14 +135,16 @@ describe("GitHub integration control plane", () => {
 
     for (const lock of locks) {
       const content = await readFile(`.github/workflows/${lock}`, "utf8");
-      const safeOutputs = content.split(/\n {2}safe_outputs:\n/)[1] ?? "";
+      const safeOutputs = content.split(/\r?\n {2}safe_outputs:\r?\n/)[1] ?? "";
       expect(safeOutputs).toContain("DARK_FACTORY_MAGE_APP_PRIVATE_KEY");
       expect(content).not.toContain("secrets.GH_AW_GITHUB_TOKEN");
       expect(content).not.toContain("secrets.GH_AW_AGENT_TOKEN");
       expect(content).not.toContain("assign-to-agent");
       expect(content).not.toContain("assign_to_agent");
       const agentJob =
-        content.split(/\n {2}agent:\n/)[1]?.split(/\n {2}\w+:\n/)[0] ?? "";
+        content
+          .split(/\r?\n {2}agent:\r?\n/)[1]
+          ?.split(/\r?\n {2}\w+:\r?\n/)[0] ?? "";
       expect(agentJob).not.toContain("DARK_FACTORY_MAGE_APP_PRIVATE_KEY");
     }
 
@@ -126,8 +154,8 @@ describe("GitHub integration control plane", () => {
     );
     const replayJob =
       maintenance
-        .split(/\n {2}apply_safe_outputs:\n/)[1]
-        ?.split(/\n {2}create_labels:\n/)[0] ?? "";
+        .split(/\r?\n {2}apply_safe_outputs:\r?\n/)[1]
+        ?.split(/\r?\n {2}create_labels:\r?\n/)[0] ?? "";
     expect(replayJob).toContain("actions/create-github-app-token@");
     expect(replayJob).toContain(
       "private-key: ${{ secrets.DARK_FACTORY_MAGE_APP_PRIVATE_KEY }}",

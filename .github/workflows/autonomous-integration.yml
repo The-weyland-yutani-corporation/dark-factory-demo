@@ -120,8 +120,10 @@ jobs:
         with:
           name: integration-policy-${{ env.HEAD_SHA }}-${{ github.run_attempt }}
           path: |
+            .integration/snapshot.json
             .integration/policy-result.json
             .integration/self-modification-verdict.json
+            .integration/evidence/**/manifest.json
           if-no-files-found: error
           retention-days: 30
       - name: Sign the passing policy result with GitHub artifact attestations
