@@ -1,0 +1,265 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1080" viewBox="0 0 1600 1080" role="img" aria-labelledby="title desc">
+  <title id="title">Dark factory nested inner and outer engineering loops</title>
+  <desc id="desc">Architecture diagram showing the GitHub goal delivery loop, the Azure production learning loop, and the protected self-modification guardrail implemented by this repository.</desc>
+  <defs>
+    <style>
+      text { font-family: "Segoe UI", Arial, sans-serif; fill: #172b4d; }
+      .title { font-size: 30px; font-weight: 700; }
+      .subtitle { font-size: 15px; fill: #44546f; }
+      .boundary-title { font-size: 17px; font-weight: 700; }
+      .lane-title { font-size: 18px; font-weight: 700; }
+      .node-title { font-size: 14px; font-weight: 700; }
+      .node-detail { font-size: 11px; fill: #344563; }
+      .edge-label { font-size: 11px; font-weight: 600; fill: #344563; }
+      .legend { font-size: 12px; }
+      .github-node { fill: #f1f3f5; stroke: #24292f; stroke-width: 2; }
+      .github-control { fill: #e9ecef; stroke: #57606a; stroke-width: 2; }
+      .azure-node { fill: #eaf5ff; stroke: #0078d4; stroke-width: 2; }
+      .azure-identity { fill: #f2ebff; stroke: #773adc; stroke-width: 2; }
+      .azure-observe { fill: #f5efff; stroke: #8661c5; stroke-width: 2; }
+      .incident-node { fill: #fff1f1; stroke: #d13438; stroke-width: 2; }
+      .guard-node { fill: #eefbf6; stroke: #008272; stroke-width: 2; }
+      .boundary-github { fill: #fbfbfc; stroke: #57606a; stroke-width: 2; stroke-dasharray: 10 7; }
+      .boundary-azure { fill: #f7fbff; stroke: #0078d4; stroke-width: 2; stroke-dasharray: 10 7; }
+      .lane { fill: none; stroke: #c7d1db; stroke-width: 1.5; stroke-dasharray: 4 5; }
+      .control { fill: none; stroke: #344563; stroke-width: 2.2; marker-end: url(#arrow-control); }
+      .feedback { fill: none; stroke: #5e6c84; stroke-width: 2.2; stroke-dasharray: 8 6; marker-end: url(#arrow-feedback); }
+      .terminal { fill: none; stroke: #d13438; stroke-width: 2.5; stroke-dasharray: 10 4 2 4; marker-end: url(#arrow-terminal); }
+      .trust { fill: none; stroke: #773adc; stroke-width: 2.2; marker-end: url(#arrow-trust); }
+    </style>
+    <marker id="arrow-control" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#344563"/>
+    </marker>
+    <marker id="arrow-feedback" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#5e6c84"/>
+    </marker>
+    <marker id="arrow-terminal" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#d13438"/>
+    </marker>
+    <marker id="arrow-trust" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#773adc"/>
+    </marker>
+  </defs>
+
+  <rect width="1600" height="1080" fill="#ffffff"/>
+  <text x="40" y="48" class="title">Dark factory: nested engineering loops</text>
+  <text x="40" y="75" class="subtitle">Repository-grounded control flow: deliver a goal, learn from production, and safely evolve the factory itself</text>
+
+  <rect x="35" y="105" width="1010" height="720" rx="18" class="boundary-github"/>
+  <text x="58" y="134" class="boundary-title">GitHub trust boundary - issues, agentic workflows, Actions, merge queue</text>
+  <rect x="1070" y="105" width="495" height="720" rx="18" class="boundary-azure"/>
+  <text x="1093" y="134" class="boundary-title">Azure subscription / resource-group trust boundary</text>
+
+  <rect x="55" y="155" width="970" height="330" rx="16" class="lane"/>
+  <text x="72" y="183" class="lane-title">1. Inner goal-delivery loop</text>
+  <text x="72" y="204" class="subtitle">Policy lifecycle: submitted -&gt; planned -&gt; implementing -&gt; review -&gt; reviewed -&gt; merging -&gt; completed</text>
+
+  <g id="goal-intake">
+    <rect x="75" y="230" width="130" height="95" rx="12" class="github-node"/>
+    <text x="140" y="254" text-anchor="middle" class="node-title">Goal intake</text>
+    <text x="140" y="274" text-anchor="middle" class="node-detail">Goal intake and</text>
+    <text x="140" y="289" text-anchor="middle" class="node-detail">normalization</text>
+    <text x="140" y="307" text-anchor="middle" class="node-detail">key + SHA-256 digest</text>
+  </g>
+  <g id="planning">
+    <rect x="225" y="230" width="130" height="95" rx="12" class="github-node"/>
+    <text x="290" y="254" text-anchor="middle" class="node-title">Planning</text>
+    <text x="290" y="274" text-anchor="middle" class="node-detail">Goal planning</text>
+    <text x="290" y="289" text-anchor="middle" class="node-detail">criteria-to-evidence</text>
+    <text x="290" y="307" text-anchor="middle" class="node-detail">budget reservation</text>
+  </g>
+  <g id="implementation">
+    <rect x="375" y="230" width="140" height="95" rx="12" class="github-node"/>
+    <text x="445" y="254" text-anchor="middle" class="node-title">Implementation</text>
+    <text x="445" y="274" text-anchor="middle" class="node-detail">Autonomous goal</text>
+    <text x="445" y="289" text-anchor="middle" class="node-detail">implementation</text>
+    <text x="445" y="307" text-anchor="middle" class="node-detail">one reconciled PR</text>
+  </g>
+  <g id="checks">
+    <rect x="535" y="230" width="150" height="95" rx="12" class="github-control"/>
+    <text x="610" y="254" text-anchor="middle" class="node-title">Deterministic checks</text>
+    <text x="610" y="274" text-anchor="middle" class="node-detail">verify + dependency</text>
+    <text x="610" y="289" text-anchor="middle" class="node-detail">security + CodeQL</text>
+    <text x="610" y="307" text-anchor="middle" class="node-detail">+ Trivy, SHA-bound</text>
+  </g>
+  <g id="review">
+    <rect x="705" y="230" width="140" height="95" rx="12" class="github-node"/>
+    <text x="775" y="254" text-anchor="middle" class="node-title">Independent review</text>
+    <text x="775" y="274" text-anchor="middle" class="node-detail">Independent pull</text>
+    <text x="775" y="289" text-anchor="middle" class="node-detail">request review</text>
+    <text x="775" y="307" text-anchor="middle" class="node-detail">separate role/session</text>
+  </g>
+  <g id="integration">
+    <rect x="865" y="230" width="140" height="95" rx="12" class="github-node"/>
+    <text x="935" y="254" text-anchor="middle" class="node-title">Integration / merge</text>
+    <text x="935" y="274" text-anchor="middle" class="node-detail">Autonomous</text>
+    <text x="935" y="289" text-anchor="middle" class="node-detail">integration gate</text>
+    <text x="935" y="307" text-anchor="middle" class="node-detail">merge queue, exact head</text>
+  </g>
+
+  <path d="M205 278 H225" class="control"/>
+  <path d="M355 278 H375" class="control"/>
+  <path d="M515 278 H535" class="control"/>
+  <path d="M685 278 H705" class="control"/>
+  <path d="M845 278 H865" class="control"/>
+  <text x="210" y="265" class="edge-label">valid contract</text>
+  <text x="514" y="220" class="edge-label">PR head SHA</text>
+
+  <g id="repair">
+    <rect x="655" y="365" width="180" height="75" rx="12" class="incident-node"/>
+    <text x="745" y="389" text-anchor="middle" class="node-title">Bounded repair</text>
+    <text x="745" y="408" text-anchor="middle" class="node-detail">Bounded repair implementation</text>
+    <text x="745" y="425" text-anchor="middle" class="node-detail">max 2 repairs / 3 reviews</text>
+  </g>
+  <path d="M775 325 V350 H745 V365" class="feedback"/>
+  <text x="785" y="349" class="edge-label">repair:needed</text>
+  <path d="M655 403 H445 V325" class="feedback"/>
+  <text x="500" y="394" class="edge-label">focused patch + re-check</text>
+  <path d="M835 403 H965 V325" class="terminal"/>
+  <text x="846" y="390" class="edge-label">exhausted / unsafe -&gt; terminal incident</text>
+
+  <rect x="55" y="505" width="1490" height="285" rx="16" class="lane"/>
+  <text x="72" y="534" class="lane-title">2. Outer production-learning loop</text>
+  <text x="72" y="555" class="subtitle">A merged main commit is built once, attested, progressively deployed, observed, and routed to rollback or one deduplicated fix-forward goal.</text>
+
+  <g id="main">
+    <rect x="80" y="585" width="130" height="80" rx="12" class="github-node"/>
+    <text x="145" y="610" text-anchor="middle" class="node-title">Merged main</text>
+    <text x="145" y="630" text-anchor="middle" class="node-detail">Integration completion</text>
+    <text x="145" y="647" text-anchor="middle" class="node-detail">state:completed</text>
+  </g>
+  <g id="build">
+    <rect x="240" y="585" width="170" height="80" rx="12" class="github-control"/>
+    <text x="325" y="608" text-anchor="middle" class="node-title">Immutable build</text>
+    <text x="325" y="628" text-anchor="middle" class="node-detail">Build immutable delivery image</text>
+    <text x="325" y="646" text-anchor="middle" class="node-detail">digest + provenance attestation</text>
+  </g>
+  <g id="oidc">
+    <rect x="445" y="585" width="155" height="80" rx="12" class="azure-identity"/>
+    <text x="522" y="608" text-anchor="middle" class="node-title">OIDC trust exchange</text>
+    <text x="522" y="628" text-anchor="middle" class="node-detail">GitHub OIDC -&gt; Entra</text>
+    <text x="522" y="646" text-anchor="middle" class="node-detail">least-privilege RBAC, no PAT</text>
+  </g>
+  <g id="app-token">
+    <rect x="445" y="685" width="155" height="65" rx="12" class="github-control"/>
+    <text x="522" y="709" text-anchor="middle" class="node-title">GitHub App token</text>
+    <text x="522" y="728" text-anchor="middle" class="node-detail">repo-scoped deployments/issues</text>
+  </g>
+  <g id="acr">
+    <rect x="1095" y="575" width="130" height="90" rx="12" class="azure-node"/>
+    <text x="1160" y="601" text-anchor="middle" class="node-title">Azure Container</text>
+    <text x="1160" y="618" text-anchor="middle" class="node-title">Registry</text>
+    <text x="1160" y="638" text-anchor="middle" class="node-detail">immutable sha256</text>
+    <text x="1160" y="653" text-anchor="middle" class="node-detail">attested image</text>
+  </g>
+  <g id="deploy">
+    <rect x="1245" y="575" width="140" height="90" rx="12" class="azure-node"/>
+    <text x="1315" y="600" text-anchor="middle" class="node-title">Progressive deploy</text>
+    <text x="1315" y="620" text-anchor="middle" class="node-detail">Progressive production</text>
+    <text x="1315" y="637" text-anchor="middle" class="node-detail">deployment</text>
+    <text x="1315" y="653" text-anchor="middle" class="node-detail">5 - 25 - 50 - 100%</text>
+  </g>
+  <g id="runtime">
+    <rect x="1405" y="575" width="130" height="90" rx="12" class="azure-node"/>
+    <text x="1470" y="600" text-anchor="middle" class="node-title">Container Apps</text>
+    <text x="1470" y="620" text-anchor="middle" class="node-detail">production app revision</text>
+    <text x="1470" y="637" text-anchor="middle" class="node-detail">managed identities</text>
+    <text x="1470" y="653" text-anchor="middle" class="node-detail">Key Vault + PostgreSQL</text>
+  </g>
+  <g id="observe">
+    <rect x="1245" y="690" width="290" height="70" rx="12" class="azure-observe"/>
+    <text x="1390" y="713" text-anchor="middle" class="node-title">Observe health, synthetics, and telemetry</text>
+    <text x="1390" y="733" text-anchor="middle" class="node-detail">/healthz + /readyz + /version + policy probe</text>
+    <text x="1390" y="749" text-anchor="middle" class="node-detail">Application Insights + Log Analytics + Azure Monitor alerts</text>
+  </g>
+  <g id="incident">
+    <rect x="760" y="680" width="230" height="80" rx="12" class="incident-node"/>
+    <text x="875" y="704" text-anchor="middle" class="node-title">Closed-loop incident operations</text>
+    <text x="875" y="724" text-anchor="middle" class="node-detail">stable fingerprint + deduplicated issue</text>
+    <text x="875" y="742" text-anchor="middle" class="node-detail">severe: rollback; otherwise: fix-forward goal</text>
+  </g>
+
+  <path d="M935 325 V470 H145 V585" class="control"/>
+  <text x="165" y="475" class="edge-label">merge + post-merge evidence</text>
+  <path d="M210 625 H240" class="control"/>
+  <path d="M410 625 H445" class="trust"/>
+  <text x="420" y="612" class="edge-label">federated token</text>
+  <path d="M600 625 H1095" class="trust"/>
+  <text x="760" y="612" class="edge-label">OIDC-authenticated push / deploy</text>
+  <path d="M1225 620 H1245" class="control"/>
+  <path d="M1385 620 H1405" class="control"/>
+  <path d="M1470 665 V690" class="feedback"/>
+  <text x="1480" y="681" class="edge-label">observe</text>
+  <path d="M1245 725 H990" class="feedback"/>
+  <text x="1065" y="712" class="edge-label">alerts + failed workflows + synthetic regression</text>
+  <path d="M760 715 H600" class="terminal"/>
+  <text x="620" y="701" class="edge-label">repository_dispatch rollback.yml</text>
+  <path d="M875 680 V650 H140 V325" class="feedback"/>
+  <text x="612" y="640" class="edge-label">one bounded fix-forward type:goal re-enters intake</text>
+  <path d="M600 718 H760" class="control"/>
+  <text x="617" y="706" class="edge-label">repo-scoped incident/deployment mutation</text>
+
+  <rect x="35" y="845" width="1530" height="190" rx="18" fill="#f8fffc" stroke="#008272" stroke-width="2" stroke-dasharray="10 7"/>
+  <text x="58" y="877" class="lane-title">3. Factory self-modification guardrail - protected paths cannot bypass evidence, review, or deny-by-default integration</text>
+
+  <g id="protected-change">
+    <rect x="70" y="910" width="190" height="85" rx="12" class="guard-node"/>
+    <text x="165" y="935" text-anchor="middle" class="node-title">Protected factory change</text>
+    <text x="165" y="955" text-anchor="middle" class="node-detail">.github, verification, scripts,</text>
+    <text x="165" y="972" text-anchor="middle" class="node-detail">policy engine, infra</text>
+  </g>
+  <g id="isolation">
+    <rect x="305" y="910" width="190" height="85" rx="12" class="guard-node"/>
+    <text x="400" y="935" text-anchor="middle" class="node-title">Isolated candidate replay</text>
+    <text x="400" y="955" text-anchor="middle" class="node-detail">ephemeral Git repository</text>
+    <text x="400" y="972" text-anchor="middle" class="node-detail">live settings not mutated</text>
+  </g>
+  <g id="replay">
+    <rect x="540" y="900" width="235" height="105" rx="12" class="guard-node"/>
+    <text x="657" y="925" text-anchor="middle" class="node-title">Trusted harness + replay</text>
+    <text x="657" y="945" text-anchor="middle" class="node-detail">8 canonical scenarios</text>
+    <text x="657" y="962" text-anchor="middle" class="node-detail">evidence coverage + permission checks</text>
+    <text x="657" y="979" text-anchor="middle" class="node-detail">deterministic policy probes</text>
+  </g>
+  <g id="verdict">
+    <rect x="820" y="900" width="220" height="105" rx="12" class="guard-node"/>
+    <text x="930" y="925" text-anchor="middle" class="node-title">Signed verdict</text>
+    <text x="930" y="945" text-anchor="middle" class="node-detail">Ed25519 verdict + digest</text>
+    <text x="930" y="962" text-anchor="middle" class="node-detail">integration result attestation</text>
+    <text x="930" y="979" text-anchor="middle" class="node-detail">exact candidate SHA</text>
+  </g>
+  <g id="canary">
+    <rect x="1085" y="900" width="200" height="105" rx="12" class="guard-node"/>
+    <text x="1185" y="925" text-anchor="middle" class="node-title">Synthetic canary</text>
+    <text x="1185" y="945" text-anchor="middle" class="node-detail">synthetic goal activation</text>
+    <text x="1185" y="962" text-anchor="middle" class="node-detail">120-second bound</text>
+    <text x="1185" y="979" text-anchor="middle" class="node-detail">idempotent replay probe</text>
+  </g>
+  <g id="guard-outcome">
+    <rect x="1330" y="900" width="190" height="105" rx="12" class="incident-node"/>
+    <text x="1425" y="925" text-anchor="middle" class="node-title">Guard outcome</text>
+    <text x="1425" y="945" text-anchor="middle" class="node-detail">pass: integration eligible</text>
+    <text x="1425" y="962" text-anchor="middle" class="node-detail">fail: canary reverted</text>
+    <text x="1425" y="979" text-anchor="middle" class="node-detail">+ terminal incident</text>
+  </g>
+  <path d="M260 952 H305" class="control"/>
+  <path d="M495 952 H540" class="control"/>
+  <path d="M775 952 H820" class="control"/>
+  <path d="M1040 952 H1085" class="control"/>
+  <path d="M1285 952 H1330" class="control"/>
+  <path d="M1425 900 V835 H935 V325" class="feedback"/>
+  <text x="1130" y="832" class="edge-label">passing exact-head verdict permits normal integration only</text>
+  <path d="M1520 952 H1550 V720 H990" class="terminal"/>
+  <text x="1360" y="810" class="edge-label">failure -&gt; deduplicated terminal incident</text>
+
+  <g id="legend">
+    <rect x="60" y="1015" width="780" height="48" rx="8" fill="#ffffff" stroke="#c7d1db"/>
+    <text x="78" y="1044" class="legend" font-weight="700">Legend:</text>
+    <line x1="145" y1="1039" x2="205" y2="1039" class="control"/>
+    <text x="214" y="1044" class="legend">control / artifact flow</text>
+    <line x1="365" y1="1039" x2="425" y2="1039" class="feedback"/>
+    <text x="434" y="1044" class="legend">observation / repair feedback</text>
+    <line x1="635" y1="1039" x2="695" y2="1039" class="terminal"/>
+    <text x="704" y="1044" class="legend">rollback / terminal route</text>
+  </g>
+</svg>
