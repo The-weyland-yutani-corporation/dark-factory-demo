@@ -7,6 +7,7 @@ on:
       [Deterministic verification, Code security, Container and IaC security]
     types: [completed]
     branches: [main, 'copilot/**']
+  bots: ["dark-factory-mage[bot]"]
 permissions:
   copilot-requests: write
   contents: read
