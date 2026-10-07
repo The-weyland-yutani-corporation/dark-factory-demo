@@ -1,0 +1,101 @@
+name: Deterministic verification
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+  merge_group:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verification-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      EVIDENCE_COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.EVIDENCE_COMMIT_SHA }}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Install the lockfile compiler version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh extension install github/gh-aw --pin v0.81.6 --force
+      - name: Run deterministic checks and record every outcome
+        run: node scripts/verify-ci.mjs
+      - name: Compile Bicep without installing tools
+        id: bicep
+        continue-on-error: true
+        uses: Azure/bicep-build-action@d2a88e5c7150cd562f3e8b8f361560db2cb4d5c5
+        with:
+          bicepFilePath: infra/main.bicep
+          outputFilePath: reports/bicep/main.json
+      - name: Record Bicep compiler outcome
+        if: always()
+        env:
+          OUTCOME: ${{ steps.bicep.outcome }}
+        run: node scripts/record-action-outcome.mjs bicep-compile "$OUTCOME" Azure/bicep-build-action
+      - name: Retain conservative historical Azure validation evidence
+        if: always()
+        run: |
+          mkdir -p reports/azure
+          jq -n --arg candidate "$EVIDENCE_COMMIT_SHA" '{
+            schemaVersion: 1,
+            evidenceType: "historical-azure-validation",
+            candidateCommit: $candidate,
+            source: {
+              pullRequest: 1,
+              commit: "fe5213d6991d1a1ba3a28ea3ec13685ac654ed7b",
+              validatedAt: "2026-10-06",
+              record: ".azure/deployment-plan.md"
+            },
+            azure: {
+              subscriptionId: "ad92e163-a85e-40cc-bb50-054b0b8197a8",
+              tenantId: "1cf61a60-a877-46a7-86bc-a8f76b6ab441",
+              location: "eastus2",
+              template: "infra/subscription.bicep",
+              parameters: "infra/subscription.demo.bicepparam",
+              validation: {status: "passed", scope: "subscription"},
+              whatIf: {status: "passed", create: 40, modify: 0, delete: 0}
+            },
+            currentPreconditions: {
+              resourceGroup: "rg-dark-factory-demo-eus2",
+              resourceGroupExists: false,
+              deploymentIdentityExists: false,
+              deploymentAuthorized: false
+            },
+            limitation: "Historical validation only; no current Azure validation or mutation is claimed. Separate bootstrap authority must precreate the resource group before the deployment identity is created and remains resource-group-scoped."
+          }' > reports/azure/historical-validation.json
+      - name: Enforce evidence policy
+        if: always()
+        run: node scripts/evidence.mjs generate-and-validate
+      - name: Publish verification evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: verification-evidence-${{ github.run_id }}
+          path: |
+            .evidence/
+            coverage/
+            reports/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 30
+      - name: Expose evidence on the run summary
+        if: always()
+        run: |
+          echo "## Verification evidence" >> "$GITHUB_STEP_SUMMARY"
+          test -f .evidence/manifest.json && cat .evidence/manifest.json >> "$GITHUB_STEP_SUMMARY" || echo "Manifest unavailable" >> "$GITHUB_STEP_SUMMARY"

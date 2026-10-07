@@ -1,0 +1,115 @@
+name: Code security
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+  merge_group:
+  schedule:
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  EVIDENCE_COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+
+concurrency:
+  group: code-security-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dependency-security:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.EVIDENCE_COMMIT_SHA }}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Review pull request dependency changes
+        if: github.event_name == 'pull_request' && vars.GHAS_ENABLED == 'true'
+        uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48
+        with:
+          fail-on-severity: high
+      - name: Audit dependencies and retain machine-readable evidence
+        run: |
+          mkdir -p reports/security
+          npm audit --omit=dev --audit-level=high --json \
+            > reports/security/dependency-audit.json
+          jq --arg commit "$EVIDENCE_COMMIT_SHA" '. + {_evidence:{commit:$commit}}' reports/security/dependency-audit.json > reports/security/audit.tmp
+          mv reports/security/audit.tmp reports/security/dependency-audit.json
+      - name: Publish exact-head dependency evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: dependency-security-${{ env.EVIDENCE_COMMIT_SHA }}-${{ github.run_attempt }}
+          path: reports/security/dependency-audit.json
+          if-no-files-found: error
+          retention-days: 30
+
+  codeql:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.EVIDENCE_COMMIT_SHA }}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        if: vars.GHAS_ENABLED != 'true'
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Install locked dependencies
+        if: vars.GHAS_ENABLED != 'true'
+        run: npm ci
+      - name: Run fallback static analysis
+        id: fallback
+        if: vars.GHAS_ENABLED != 'true'
+        run: |
+          npm run lint
+          npm run typecheck
+      - id: codeql-init
+        uses: github/codeql-action/init@7999b86c43a865dc79d8923397f35af22de63401
+        if: vars.GHAS_ENABLED == 'true'
+        with:
+          languages: javascript-typescript
+      - id: codeql-analysis
+        uses: github/codeql-action/analyze@7999b86c43a865dc79d8923397f35af22de63401
+        if: vars.GHAS_ENABLED == 'true'
+        with:
+          category: /language:javascript-typescript
+          output: reports/security/codeql-results
+      - name: Record exact-head CodeQL or fallback outcome
+        if: always()
+        env:
+          FALLBACK_OUTCOME: ${{ steps.fallback.outcome }}
+          CODEQL_INIT_OUTCOME: ${{ steps.codeql-init.outcome }}
+          CODEQL_ANALYSIS_OUTCOME: ${{ steps.codeql-analysis.outcome }}
+        run: |
+          mkdir -p reports/security
+          jq -n \
+            --arg sha "$EVIDENCE_COMMIT_SHA" \
+            --arg fallback "$FALLBACK_OUTCOME" \
+            --arg init "$CODEQL_INIT_OUTCOME" \
+            --arg analysis "$CODEQL_ANALYSIS_OUTCOME" \
+            '{schemaVersion:1,commit:$sha,fallbackOutcome:$fallback,codeqlInitOutcome:$init,codeqlAnalysisOutcome:$analysis}' \
+            > reports/security/codeql-summary.json
+      - name: Publish exact-head CodeQL evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: codeql-${{ env.EVIDENCE_COMMIT_SHA }}-${{ github.run_attempt }}
+          path: reports/security/codeql*
+          if-no-files-found: error
+          retention-days: 30

@@ -1,0 +1,146 @@
+name: Trusted infrastructure deployment
+
+on:
+  workflow_run:
+    workflows: ["Deterministic verification"]
+    types: [completed]
+    branches: ["main"]
+
+permissions:
+  actions: read
+  checks: read
+  contents: read
+  id-token: write
+  pull-requests: read
+
+concurrency:
+  group: infrastructure-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+      AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
+      VERIFICATION_RUN_ID: ${{ github.event.workflow_run.id }}
+      INFRASTRUCTURE_REPORTS: reports/infrastructure
+      BICEP_TEMPLATE: infra/main.bicep
+      BICEP_PARAMETERS: infra/main.demo.bicepparam
+    steps:
+      - name: Select the exact verified source
+        id: source
+        run: |
+          set -euo pipefail
+          echo "$VERIFIED_SHA" | grep -Eq '^[a-fA-F0-9]{40}$'
+          echo "commit_sha=$VERIFIED_SHA" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ steps.source.outputs.commit_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: .nvmrc
+      - name: Download exact-run verification evidence
+        id: evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p .infrastructure/evidence
+          gh run download "$VERIFICATION_RUN_ID" \
+            --name "verification-evidence-${VERIFICATION_RUN_ID}" \
+            --dir .infrastructure/evidence
+          manifest="$(find .infrastructure/evidence -name manifest.json -type f -print -quit)"
+          test -n "$manifest"
+          cp "$manifest" .infrastructure/verification-manifest.json
+          echo "manifest=.infrastructure/verification-manifest.json" >> "$GITHUB_OUTPUT"
+      - name: Verify integration, self-modification, and compatibility evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/infrastructure/verify-release.mjs "${{ steps.evidence.outputs.manifest }}"
+      - name: Authenticate to the fixed Azure subscription with OIDC
+        uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Confirm fixed deployment scope
+        run: |
+          set -euo pipefail
+          test -n "$AZURE_RESOURCE_GROUP"
+          test -n "$AZURE_SUBSCRIPTION_ID"
+          test "$(az account show --query id -o tsv)" = "$AZURE_SUBSCRIPTION_ID"
+          az group show --name "$AZURE_RESOURCE_GROUP" --query id -o tsv
+      - name: Prepare infrastructure evidence directory
+        run: mkdir -p "$INFRASTRUCTURE_REPORTS"
+      - name: Compile the fixed Bicep template
+        uses: Azure/bicep-build-action@d2a88e5c7150cd562f3e8b8f361560db2cb4d5c5
+        with:
+          bicepFilePath: infra/main.bicep
+          outputFilePath: reports/infrastructure/main.json
+      - name: Validate the resource-group deployment
+        run: |
+          set -euo pipefail
+          az deployment group validate \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --template-file "$BICEP_TEMPLATE" \
+            --parameters "$BICEP_PARAMETERS" \
+            --output json \
+            > "$INFRASTRUCTURE_REPORTS/validation.json"
+      - name: Produce and guard Azure what-if
+        run: |
+          set -euo pipefail
+          az deployment group what-if \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --template-file "$BICEP_TEMPLATE" \
+            --parameters "$BICEP_PARAMETERS" \
+            --result-format FullResourcePayloads \
+            --no-pretty-print \
+            --output json \
+            > "$INFRASTRUCTURE_REPORTS/what-if.json"
+          node scripts/infrastructure/guard-what-if.mjs \
+            "$INFRASTRUCTURE_REPORTS/what-if.json" \
+            "$INFRASTRUCTURE_REPORTS/what-if-verdict.json"
+      - name: Apply the exact template incrementally
+        id: deploy
+        run: |
+          set -euo pipefail
+          deployment_name="infra-${VERIFIED_SHA:0:12}"
+          az deployment group create \
+            --name "$deployment_name" \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --mode Incremental \
+            --template-file "$BICEP_TEMPLATE" \
+            --parameters "$BICEP_PARAMETERS" \
+            --output json \
+            > "$INFRASTRUCTURE_REPORTS/deployment.json"
+          echo "deployment_name=$deployment_name" >> "$GITHUB_OUTPUT"
+      - name: Publish deployment summary
+        if: always()
+        run: |
+          echo "## Trusted infrastructure deployment" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Source: \`$VERIFIED_SHA\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Subscription: configured repository variable" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Resource group: \`$AZURE_RESOURCE_GROUP\`" >> "$GITHUB_STEP_SUMMARY"
+          if test -f "$INFRASTRUCTURE_REPORTS/what-if-verdict.json"; then
+            echo '```json' >> "$GITHUB_STEP_SUMMARY"
+            cat "$INFRASTRUCTURE_REPORTS/what-if-verdict.json" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Publish what-if, deployment, and evidence artifacts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: infrastructure-${{ steps.source.outputs.commit_sha }}-${{ github.run_attempt }}
+          path: |
+            .infrastructure/verification-manifest.json
+            reports/infrastructure/
+          if-no-files-found: error
+          retention-days: 30

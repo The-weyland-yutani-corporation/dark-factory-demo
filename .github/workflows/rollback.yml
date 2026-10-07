@@ -1,0 +1,81 @@
+name: Production traffic rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_revision:
+        description: Active revision to restore; blank selects the previous revision
+        required: false
+        type: string
+      incident_fingerprint:
+        description: Canonical incident fingerprint admitting this rollback
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+  deployments: write
+
+concurrency:
+  group: production-delivery
+  cancel-in-progress: false
+
+jobs:
+  rollback:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ${{ vars.DELIVERY_RUNNER || 'ubuntu-24.04' }}
+    timeout-minutes: 20
+    env:
+      AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+      AZURE_CONTAINER_APP_NAME: ${{ vars.AZURE_CONTAINER_APP_NAME }}
+      TARGET_REVISION: ${{ inputs.target_revision }}
+      INCIDENT_FINGERPRINT: ${{ inputs.incident_fingerprint }}
+      OBSERVATION_SECONDS: ${{ vars.PRODUCTION_OBSERVATION_SECONDS || '60' }}
+      DEPLOYMENT_ENVIRONMENT: production
+    steps:
+      - name: Mint repository-scoped deployment token
+        id: deployment-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ secrets.DARK_FACTORY_MAGE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.DARK_FACTORY_MAGE_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-deployments: write
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Authenticate to Azure with GitHub OIDC
+        uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Create rollback deployment record
+        id: deployment
+        env:
+          GITHUB_TOKEN: ${{ steps.deployment-token.outputs.token }}
+          DEPLOYMENT_REF: ${{ github.sha }}
+          DEPLOYMENT_DESCRIPTION: Restore production traffic
+        run: node scripts/delivery/github-deployment.mjs create
+      - name: Restore previous revision and verify
+        id: rollback
+        run: node scripts/delivery/rollback.mjs
+      - name: Record successful rollback
+        if: success()
+        env:
+          GITHUB_TOKEN: ${{ steps.deployment-token.outputs.token }}
+          DEPLOYMENT_ID: ${{ steps.deployment.outputs.deployment_id }}
+          DEPLOYMENT_STATE: success
+          ENVIRONMENT_URL: ${{ steps.rollback.outputs.environment_url }}
+          DEPLOYMENT_DESCRIPTION: Restored ${{ steps.rollback.outputs.revision }}
+        run: node scripts/delivery/github-deployment.mjs status
+      - name: Record failed rollback
+        if: failure() && steps.deployment.outputs.deployment_id != ''
+        env:
+          GITHUB_TOKEN: ${{ steps.deployment-token.outputs.token }}
+          DEPLOYMENT_ID: ${{ steps.deployment.outputs.deployment_id }}
+          DEPLOYMENT_STATE: failure
+          DEPLOYMENT_DESCRIPTION: Rollback failed; operator investigation required
+        run: node scripts/delivery/github-deployment.mjs status

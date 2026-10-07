@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "requiredChecks": [
+    "format",
+    "lint",
+    "typecheck",
+    "unit-coverage",
+    "api-contract",
+    "delivery-scripts",
+    "infrastructure-scripts",
+    "self-modification",
+    "accessibility",
+    "build",
+    "workflow-yaml",
+    "dependency-audit",
+    "secret-scan",
+    "iac-static",
+    "bicep-compile",
+    "container-static",
+    "agentic-sync",
+    "mutation"
+  ],
+  "coverage": {
+    "lines": 90,
+    "functions": 90,
+    "statements": 90,
+    "branches": 85
+  },
+  "mutation": {
+    "break": 80
+  }
+}

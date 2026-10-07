@@ -1,0 +1,108 @@
+name: Autonomous goal
+description: Define an outcome for the autonomous control plane to implement and independently verify.
+title: "[Goal]: "
+labels:
+  - type:goal
+  - state:submitted
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Submission authorizes autonomous intake, implementation, independent review, bounded repair, and merge when every repository policy check passes.
+        The issue is the goal contract. Do not include secrets, credentials, private keys, tokens, or sensitive customer data.
+        Budgets and lifecycle rules are defined in `.github/autonomy/policy.json`.
+  - type: input
+    id: goal_key
+    attributes:
+      label: Goal key
+      description: Stable lowercase deduplication key. Reuse it when retrying or refining the same intended outcome.
+      placeholder: api-health-timeout
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: Describe the observable end state, not a preferred implementation.
+      placeholder: Users can...
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Provide objective, independently verifiable checks. Each criterion must have evidence.
+      placeholder: |
+        - [ ] Given ..., when ..., then ...
+        - [ ] Existing behavior remains compatible
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints and exclusions
+      description: State boundaries, compatibility requirements, protected systems, and files or environments that must not change.
+      placeholder: |
+        Allowed: packages/example/**
+        Excluded: production resources, credentials, and unrelated refactors
+    validations:
+      required: true
+  - type: textarea
+    id: assumptions
+    attributes:
+      label: Known assumptions and uncertainty
+      description: List facts the system may assume and unresolved uncertainty. Enter "None" when there are no known assumptions.
+      placeholder: |
+        - Assumption: ...
+        - Uncertainty: ...
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Required evidence
+      description: Map acceptance criteria to tests, artifacts, metrics, screenshots, or logs that prove completion.
+      placeholder: |
+        AC1: test name or command
+        AC2: artifact or observation
+    validations:
+      required: true
+  - type: textarea
+    id: rollback
+    attributes:
+      label: Rollback requirements
+      description: Describe how the change can be safely reverted or disabled and what data must be preserved.
+      placeholder: Revert the implementation commit; no data migration is required.
+    validations:
+      required: true
+  - type: dropdown
+    id: risk
+    attributes:
+      label: Risk class
+      description: Select the highest applicable risk. Automation must raise, never lower, this classification when evidence warrants it.
+      options:
+        - low
+        - medium
+        - high
+    validations:
+      required: true
+  - type: dropdown
+    id: budget_profile
+    attributes:
+      label: Execution budget
+      description: Policy defaults are ceilings. A goal may choose a stricter profile but cannot expand a ceiling.
+      options:
+        - policy-default
+        - stricter-half-budget
+        - analysis-only
+    validations:
+      required: true
+  - type: checkboxes
+    id: authorization
+    attributes:
+      label: Authorization and data handling
+      options:
+        - label: I authorize autonomous changes, independent review, bounded repair attempts, and merge when repository policy passes.
+          required: true
+        - label: I confirm this issue contains no secrets or sensitive customer data.
+          required: true

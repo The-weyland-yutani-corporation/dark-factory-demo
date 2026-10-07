@@ -1,0 +1,33 @@
+{
+  "analyzers": {
+    "core": {
+      "enabled": true,
+      "rules": {
+        "adminusername-should-not-be-literal": {
+          "level": "error"
+        },
+        "explicit-values-for-loc-params": {
+          "level": "warning"
+        },
+        "no-hardcoded-env-urls": {
+          "level": "warning"
+        },
+        "no-unnecessary-dependson": {
+          "level": "warning"
+        },
+        "outputs-should-not-contain-secrets": {
+          "level": "error"
+        },
+        "secure-parameter-default": {
+          "level": "error"
+        },
+        "use-recent-api-versions": {
+          "level": "warning"
+        },
+        "use-resource-id-functions": {
+          "level": "warning"
+        }
+      }
+    }
+  }
+}

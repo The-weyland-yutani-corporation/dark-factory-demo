@@ -1,0 +1,108 @@
+name: Control-plane incident
+description: Record a failed, unsafe, duplicate, or terminal autonomous run with recovery evidence.
+title: "[Incident]: "
+labels:
+  - type:incident
+  - state:reported
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use one incident per normalized incident key. Search existing open and resolved incidents before submitting.
+        Never paste secrets or sensitive customer data; reference access-controlled evidence instead.
+  - type: input
+    id: incident_key
+    attributes:
+      label: Incident key
+      description: Stable deduplication key in the form `<goal-key>:<phase>:<failure-class>`.
+      placeholder: api-health-timeout:review:deterministic-validation
+    validations:
+      required: true
+  - type: textarea
+    id: correlation
+    attributes:
+      label: Goal and run correlation
+      description: Link the affected goal and record the workflow run URL or correlation ID.
+      placeholder: |
+        Goal: https://github.com/owner/repository/issues/123
+        Run: https://github.com/owner/repository/actions/runs/... or correlation-id
+    validations:
+      required: true
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Failed lifecycle phase
+      options:
+        - intake
+        - planning
+        - implementation
+        - validation
+        - review
+        - repair
+        - merge
+        - post-merge
+    validations:
+      required: true
+  - type: dropdown
+    id: classification
+    attributes:
+      label: Classification
+      options:
+        - deterministic-validation
+        - agent-execution
+        - policy-violation
+        - permission-or-authentication
+        - duplicate-or-idempotency
+        - deployment
+        - repair-exhausted
+        - unknown
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - sev4-low
+        - sev3-moderate
+        - sev2-high
+        - sev1-critical
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact
+      description: Describe affected goals, pull requests, environments, data, and users, including the known start and end time.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Include sanitized error excerpts, artifact names, commit SHAs, check names, and correlation IDs.
+    validations:
+      required: true
+  - type: textarea
+    id: attempts
+    attributes:
+      label: Attempts and budget consumption
+      description: List each attempted action, its outcome, and consumed attempt, run, and time budget.
+    validations:
+      required: true
+  - type: textarea
+    id: recovery
+    attributes:
+      label: Recovery or terminal reason
+      description: State the safe recovery, rollback status, owner, and why automation stopped or may resume.
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety confirmation
+      options:
+        - label: Mutation has stopped or the affected operation is proven safe and idempotent.
+          required: true
+        - label: I searched for an existing incident with the same normalized incident key.
+          required: true

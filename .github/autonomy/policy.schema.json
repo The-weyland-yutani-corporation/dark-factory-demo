@@ -1,0 +1,355 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/The-weyland-yutani-corporation/dark-factory-demo/.github/autonomy/policy.schema.json",
+  "title": "Autonomous goal contract policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schemaVersion",
+    "contractVersion",
+    "issueForms",
+    "labels",
+    "lifecycle",
+    "assumptions",
+    "budgets",
+    "idempotency",
+    "evidence",
+    "selfModification",
+    "integration"
+  ],
+  "properties": {
+    "$schema": { "const": "./policy.schema.json" },
+    "schemaVersion": { "type": "string", "pattern": "^1\\.[0-9]+\\.[0-9]+$" },
+    "contractVersion": { "type": "string", "pattern": "^1\\.[0-9]+\\.[0-9]+$" },
+    "issueForms": {
+      "type": "object",
+      "required": ["goal", "incident"],
+      "additionalProperties": false,
+      "properties": {
+        "goal": { "$ref": "#/$defs/form" },
+        "incident": { "$ref": "#/$defs/form" }
+      }
+    },
+    "labels": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "exclusiveGroups", "control"],
+      "properties": {
+        "source": { "type": "string" },
+        "exclusiveGroups": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "state", "risk", "deployment"],
+          "properties": {
+            "type": { "$ref": "#/$defs/nonEmptyStrings" },
+            "state": { "$ref": "#/$defs/nonEmptyStrings" },
+            "risk": { "$ref": "#/$defs/nonEmptyStrings" },
+            "deployment": { "$ref": "#/$defs/nonEmptyStrings" }
+          }
+        },
+        "control": { "$ref": "#/$defs/nonEmptyStrings" }
+      }
+    },
+    "lifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["goal", "incident", "invariants"],
+      "properties": {
+        "goal": { "$ref": "#/$defs/lifecycle" },
+        "incident": { "$ref": "#/$defs/lifecycle" },
+        "invariants": { "$ref": "#/$defs/nonEmptyStrings" }
+      }
+    },
+    "assumptions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "default",
+        "allowed",
+        "requirements",
+        "forbidden",
+        "onUnresolvedMaterialUncertainty"
+      ],
+      "properties": {
+        "default": { "const": "conservative" },
+        "allowed": { "$ref": "#/$defs/nonEmptyStrings" },
+        "requirements": { "$ref": "#/$defs/nonEmptyStrings" },
+        "forbidden": { "$ref": "#/$defs/nonEmptyStrings" },
+        "onUnresolvedMaterialUncertainty": { "type": "string", "minLength": 1 }
+      }
+    },
+    "budgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "global",
+        "riskProfiles",
+        "profiles",
+        "accounting",
+        "exhaustionBehavior"
+      ],
+      "properties": {
+        "global": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "maxImplementationAttempts",
+            "maxRepairAttempts",
+            "maxReviewCycles",
+            "maxWorkflowRunsPerGoal",
+            "maxWallClockMinutes"
+          ],
+          "properties": {
+            "maxImplementationAttempts": {
+              "$ref": "#/$defs/nonNegativeInteger"
+            },
+            "maxRepairAttempts": { "$ref": "#/$defs/nonNegativeInteger" },
+            "maxReviewCycles": { "$ref": "#/$defs/positiveInteger" },
+            "maxWorkflowRunsPerGoal": { "$ref": "#/$defs/positiveInteger" },
+            "maxWallClockMinutes": { "$ref": "#/$defs/positiveInteger" }
+          }
+        },
+        "riskProfiles": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["low", "medium", "high"],
+          "properties": {
+            "low": { "$ref": "#/$defs/riskBudget" },
+            "medium": { "$ref": "#/$defs/riskBudget" },
+            "high": { "$ref": "#/$defs/riskBudget" }
+          }
+        },
+        "profiles": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "policy-default",
+            "stricter-half-budget",
+            "analysis-only"
+          ],
+          "properties": {
+            "policy-default": { "$ref": "#/$defs/executionProfile" },
+            "stricter-half-budget": {
+              "$ref": "#/$defs/executionProfile"
+            },
+            "analysis-only": { "$ref": "#/$defs/executionProfile" }
+          }
+        },
+        "accounting": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "changedLines",
+            "changedFiles",
+            "attempt",
+            "repairAttempt",
+            "rounding"
+          ],
+          "properties": {
+            "changedLines": { "type": "string", "minLength": 1 },
+            "changedFiles": { "type": "string", "minLength": 1 },
+            "attempt": { "type": "string", "minLength": 1 },
+            "repairAttempt": { "type": "string", "minLength": 1 },
+            "rounding": { "type": "string", "minLength": 1 }
+          }
+        },
+        "exhaustionBehavior": { "type": "string", "minLength": 1 }
+      }
+    },
+    "idempotency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "normalization",
+        "goalKeyPattern",
+        "incidentKeyPattern",
+        "contractDigest",
+        "operationKeyTemplate",
+        "deduplication",
+        "sideEffects"
+      ],
+      "properties": {
+        "normalization": { "type": "string", "minLength": 1 },
+        "goalKeyPattern": { "type": "string", "minLength": 1 },
+        "incidentKeyPattern": { "type": "string", "minLength": 1 },
+        "contractDigest": { "type": "string", "minLength": 1 },
+        "operationKeyTemplate": { "type": "string", "minLength": 1 },
+        "deduplication": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "goalScope",
+            "incidentScope",
+            "pullRequestScope",
+            "searchStates",
+            "onEquivalent",
+            "onConflict"
+          ],
+          "properties": {
+            "goalScope": { "type": "string", "minLength": 1 },
+            "incidentScope": { "type": "string", "minLength": 1 },
+            "pullRequestScope": { "type": "string", "minLength": 1 },
+            "searchStates": { "$ref": "#/$defs/nonEmptyStrings" },
+            "onEquivalent": { "type": "string", "minLength": 1 },
+            "onConflict": { "type": "string", "minLength": 1 }
+          }
+        },
+        "sideEffects": { "$ref": "#/$defs/nonEmptyStrings" }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requiredPullRequestSections",
+        "retention",
+        "secretHandling"
+      ],
+      "properties": {
+        "requiredPullRequestSections": {
+          "$ref": "#/$defs/nonEmptyStrings"
+        },
+        "retention": { "type": "string", "minLength": 1 },
+        "secretHandling": { "type": "string", "minLength": 1 }
+      }
+    },
+    "selfModification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protectedPaths",
+        "factoryPaths",
+        "canonicalScenarios",
+        "canaryTimeoutSeconds",
+        "verdictSchemaVersion",
+        "failureBehavior"
+      ],
+      "properties": {
+        "protectedPaths": { "$ref": "#/$defs/nonEmptyStrings" },
+        "factoryPaths": { "$ref": "#/$defs/nonEmptyStrings" },
+        "canonicalScenarios": { "$ref": "#/$defs/nonEmptyStrings" },
+        "canaryTimeoutSeconds": { "$ref": "#/$defs/positiveInteger" },
+        "verdictSchemaVersion": { "const": 1 },
+        "failureBehavior": {
+          "const": "revert-canary-and-create-terminal-incident"
+        }
+      }
+    },
+    "integration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requiredChecks",
+        "reviewedStateLabel",
+        "blockingLabels",
+        "selfModificationPaths",
+        "selfModificationApprovalLabel",
+        "selfModificationVerdictRequired",
+        "deploymentPaths",
+        "deploymentCompatibilityLabel",
+        "deploymentIncompatibilityLabel",
+        "resultRetentionDays"
+      ],
+      "properties": {
+        "requiredChecks": { "$ref": "#/$defs/nonEmptyStrings" },
+        "reviewedStateLabel": { "type": "string", "minLength": 1 },
+        "blockingLabels": { "$ref": "#/$defs/nonEmptyStrings" },
+        "selfModificationPaths": { "$ref": "#/$defs/nonEmptyStrings" },
+        "selfModificationApprovalLabel": {
+          "type": "string",
+          "minLength": 1
+        },
+        "selfModificationVerdictRequired": { "const": true },
+        "deploymentPaths": { "$ref": "#/$defs/nonEmptyStrings" },
+        "deploymentCompatibilityLabel": {
+          "type": "string",
+          "minLength": 1
+        },
+        "deploymentIncompatibilityLabel": {
+          "type": "string",
+          "minLength": 1
+        },
+        "resultRetentionDays": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 90
+        }
+      }
+    }
+  },
+  "$defs": {
+    "nonEmptyStrings": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "nonNegativeInteger": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "positiveInteger": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "riskBudget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxChangedFiles", "maxChangedLines", "maxWallClockMinutes"],
+      "properties": {
+        "maxChangedFiles": { "$ref": "#/$defs/positiveInteger" },
+        "maxChangedLines": { "$ref": "#/$defs/positiveInteger" },
+        "maxWallClockMinutes": { "$ref": "#/$defs/positiveInteger" }
+      }
+    },
+    "executionProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["multiplier", "mutationAllowed"],
+      "properties": {
+        "multiplier": { "type": "number", "minimum": 0, "maximum": 1 },
+        "mutationAllowed": { "type": "boolean" }
+      }
+    },
+    "form": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "typeLabel", "initialState", "requiredFields"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^\\.github/ISSUE_TEMPLATE/.+\\.yml$"
+        },
+        "typeLabel": { "type": "string", "pattern": "^type:" },
+        "initialState": { "type": "string", "pattern": "^state:" },
+        "requiredFields": { "$ref": "#/$defs/nonEmptyStrings" }
+      }
+    },
+    "transition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["from", "to", "actor", "guard"],
+      "properties": {
+        "from": { "type": "string", "pattern": "^state:" },
+        "to": { "type": "string", "pattern": "^state:" },
+        "actor": { "type": "string", "minLength": 1 },
+        "guard": { "type": "string", "minLength": 1 }
+      }
+    },
+    "lifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["initial", "terminal", "transitions"],
+      "properties": {
+        "initial": { "type": "string", "pattern": "^state:" },
+        "terminal": { "$ref": "#/$defs/nonEmptyStrings" },
+        "transitions": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/transition" }
+        }
+      }
+    }
+  }
+}
