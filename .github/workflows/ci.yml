@@ -18,8 +18,12 @@ jobs:
   verify:
     runs-on: ubuntu-24.04
     timeout-minutes: 35
+    env:
+      EVIDENCE_COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.EVIDENCE_COMMIT_SHA }}
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version-file: .nvmrc
@@ -48,7 +52,7 @@ jobs:
         if: always()
         run: |
           mkdir -p reports/azure
-          jq -n --arg candidate "$GITHUB_SHA" '{
+          jq -n --arg candidate "$EVIDENCE_COMMIT_SHA" '{
             schemaVersion: 1,
             evidenceType: "historical-azure-validation",
             candidateCommit: $candidate,

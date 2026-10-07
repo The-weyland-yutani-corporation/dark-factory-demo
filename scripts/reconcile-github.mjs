@@ -23,6 +23,9 @@ const environment = {
 };
 const reportsRoot = "reports/reconciliation";
 const operations = [];
+const markerIssue = process.env.GOAL_ISSUE_NUMBER;
+const operationKey = `${process.env.GOAL_KEY ?? "unspecified"}:reconcile:github:${process.env.CONTRACT_DIGEST ?? "unspecified"}`;
+const marker = `<!-- dark-factory-reconcile:${operationKey} -->`;
 
 function readApi(args) {
   return JSON.parse(
@@ -164,6 +167,26 @@ function converged(state) {
 }
 
 const preState = await captureState();
+if (apply && !markerIssue)
+  throw new Error("GOAL_ISSUE_NUMBER is required before --apply");
+const recordedOperation = apply
+  ? readApi([
+      "--paginate",
+      "--slurp",
+      `repos/${repository}/issues/${markerIssue}/comments?per_page=100`,
+    ])
+      .flat()
+      .find((comment) => comment.body?.includes(marker))
+  : null;
+if (recordedOperation) {
+  await mkdir(reportsRoot, { recursive: true });
+  await writeFile(
+    `${reportsRoot}/applied-state.json`,
+    `${JSON.stringify({ schemaVersion: 1, operationKey, repository, mode: "apply", reused: true, converged: converged(preState), postState: preState }, null, 2)}\n`,
+  );
+  console.log(`Reused recorded reconciliation: ${operationKey}`);
+  process.exit(0);
+}
 
 for (const label of labels) {
   const encoded = encodeURIComponent(label.name);
@@ -224,7 +247,7 @@ request(
 const postState = apply ? await captureState() : preState;
 const report = {
   schemaVersion: 1,
-  operationKey: `${process.env.GOAL_KEY ?? "unspecified"}:reconcile:github:${process.env.CONTRACT_DIGEST ?? "unspecified"}`,
+  operationKey,
   repository,
   mode: apply ? "apply" : "dry-run",
   generatedAt: new Date().toISOString(),
@@ -240,4 +263,16 @@ const reportPath = `${reportsRoot}/${apply ? "applied-state" : "dry-run"}.json`;
 await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`);
 if (apply && !report.converged)
   throw new Error(`GitHub reconciliation did not converge; see ${reportPath}`);
+if (apply)
+  request(
+    [
+      "api",
+      "--method",
+      "POST",
+      `repos/${repository}/issues/${markerIssue}/comments`,
+      "--input",
+      "-",
+    ],
+    { body: `${marker}\nReconciliation converged for \`${operationKey}\`.` },
+  );
 console.log(`${apply ? "Applied" : "Planned"} reconciliation: ${reportPath}`);

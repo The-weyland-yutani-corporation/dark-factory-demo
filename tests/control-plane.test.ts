@@ -45,6 +45,7 @@ describe("GitHub integration control plane", () => {
     expect(workflows[0]).toContain("include-hidden-files: true");
     for (const workflow of workflows) {
       expect(workflow).toContain("retention-days: 30");
+      expect(workflow).toContain("github.event.pull_request.head.sha");
     }
     expect(workflows[1]).toContain("dependency-audit.json");
     expect(workflows[1]).toContain("codeql-summary.json");
@@ -60,6 +61,7 @@ describe("GitHub integration control plane", () => {
     expect(script).toContain("reports/reconciliation");
     expect(script).toContain("preConverged");
     expect(script).toContain("converged");
+    expect(script).toContain("dark-factory-reconcile:");
   });
 
   it("publishes the integration context for pull heads and merge groups", async () => {

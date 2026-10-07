@@ -9,6 +9,8 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+env:
+  EVIDENCE_COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 concurrency:
   group: container-security-${{ github.ref }}
   cancel-in-progress: true
@@ -18,7 +20,9 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      - run: docker build --tag dark-factory:${{ github.sha }} .
+        with:
+          ref: ${{ env.EVIDENCE_COMMIT_SHA }}
+      - run: docker build --tag dark-factory:${{ env.EVIDENCE_COMMIT_SHA }} .
       - run: mkdir -p reports/security/trivy
       - name: Scan repository dependencies, secrets, and IaC
         id: filesystem
@@ -38,7 +42,7 @@ jobs:
         continue-on-error: true
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
         with:
-          image-ref: dark-factory:${{ github.sha }}
+          image-ref: dark-factory:${{ env.EVIDENCE_COMMIT_SHA }}
           severity: HIGH,CRITICAL
           ignore-unfixed: true
           format: sarif
@@ -46,9 +50,12 @@ jobs:
           exit-code: "1"
       - name: Publish exact-head Trivy evidence
         if: always()
+        run: jq -n --arg commit "$EVIDENCE_COMMIT_SHA" '{schemaVersion:1,commit:$commit}' > reports/security/trivy/metadata.json
+      - name: Upload exact-head Trivy evidence
+        if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: trivy-${{ github.sha }}-${{ github.run_attempt }}
+          name: trivy-${{ env.EVIDENCE_COMMIT_SHA }}-${{ github.run_attempt }}
           path: reports/security/trivy/
           if-no-files-found: error
           retention-days: 30

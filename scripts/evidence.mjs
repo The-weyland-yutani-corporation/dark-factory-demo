@@ -53,6 +53,7 @@ async function readChecks() {
 }
 
 function commitIdentifier() {
+  if (process.env.EVIDENCE_COMMIT_SHA) return process.env.EVIDENCE_COMMIT_SHA;
   if (process.env.GITHUB_SHA) return process.env.GITHUB_SHA;
   try {
     return execFileSync("git", ["rev-parse", "HEAD"], {

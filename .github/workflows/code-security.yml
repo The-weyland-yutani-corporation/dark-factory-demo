@@ -12,6 +12,9 @@ on:
 permissions:
   contents: read
 
+env:
+  EVIDENCE_COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+
 concurrency:
   group: code-security-${{ github.ref }}
   cancel-in-progress: true
@@ -22,6 +25,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.EVIDENCE_COMMIT_SHA }}
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version-file: .nvmrc
@@ -38,11 +43,13 @@ jobs:
           mkdir -p reports/security
           npm audit --omit=dev --audit-level=high --json \
             > reports/security/dependency-audit.json
+          jq --arg commit "$EVIDENCE_COMMIT_SHA" '. + {_evidence:{commit:$commit}}' reports/security/dependency-audit.json > reports/security/audit.tmp
+          mv reports/security/audit.tmp reports/security/dependency-audit.json
       - name: Publish exact-head dependency evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: dependency-security-${{ github.sha }}-${{ github.run_attempt }}
+          name: dependency-security-${{ env.EVIDENCE_COMMIT_SHA }}-${{ github.run_attempt }}
           path: reports/security/dependency-audit.json
           if-no-files-found: error
           retention-days: 30
@@ -56,6 +63,8 @@ jobs:
       security-events: write
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ env.EVIDENCE_COMMIT_SHA }}
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         if: vars.GHAS_ENABLED != 'true'
         with:
@@ -90,7 +99,7 @@ jobs:
         run: |
           mkdir -p reports/security
           jq -n \
-            --arg sha "$GITHUB_SHA" \
+            --arg sha "$EVIDENCE_COMMIT_SHA" \
             --arg fallback "$FALLBACK_OUTCOME" \
             --arg init "$CODEQL_INIT_OUTCOME" \
             --arg analysis "$CODEQL_ANALYSIS_OUTCOME" \
@@ -100,7 +109,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: codeql-${{ github.sha }}-${{ github.run_attempt }}
+          name: codeql-${{ env.EVIDENCE_COMMIT_SHA }}-${{ github.run_attempt }}
           path: reports/security/codeql*
           if-no-files-found: error
           retention-days: 30
