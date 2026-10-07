@@ -2,6 +2,7 @@
 on:
   issues:
     types: [labeled]
+  bots: ["dark-factory-mage[bot]"]
 checkout:
   fetch-depth: 0
 permissions:

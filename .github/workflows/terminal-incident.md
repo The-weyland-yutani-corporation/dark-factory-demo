@@ -2,6 +2,7 @@
 on:
   issues:
     types: [labeled]
+  bots: ["dark-factory-mage[bot]"]
 permissions:
   copilot-requests: write
   contents: read
