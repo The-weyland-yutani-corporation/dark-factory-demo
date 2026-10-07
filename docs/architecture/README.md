@@ -9,13 +9,34 @@ affect production.
 
 ## Files
 
-| File                                                                     | Purpose                                                                                                        |
-| ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
-| [`dark-factory-architecture.drawio`](./dark-factory-architecture.drawio) | Editable source (open in [diagrams.net](https://app.diagrams.net) / the draw.io desktop or VS Code extension). |
-| [`dark-factory-architecture.svg`](./dark-factory-architecture.svg)       | Rendered, standalone SVG for viewing in GitHub, docs sites, or a browser.                                      |
+| File                                                                                             | Purpose                                                                                                        |
+| ------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| [`dark-factory-architecture.drawio`](./dark-factory-architecture.drawio)                         | Editable source (open in [diagrams.net](https://app.diagrams.net) / the draw.io desktop or VS Code extension). |
+| [`dark-factory-architecture.svg`](./dark-factory-architecture.svg)                               | Rendered, standalone SVG for viewing in GitHub, docs sites, or a browser.                                      |
+| [`dark-factory-nested-engineering-loops.drawio`](./dark-factory-nested-engineering-loops.drawio) | Editable source for the nested inner delivery, outer production-learning, and self-modification loops.         |
+| [`dark-factory-nested-engineering-loops.svg`](./dark-factory-nested-engineering-loops.svg)       | Self-contained rendered view of the repository's nested engineering loops.                                     |
 
-Both files are generated from the same layout data so they stay in sync; if you edit one, prefer
+The original pair is generated from the same layout data so it stays in sync; if you edit one, prefer
 re-deriving the other rather than hand-editing them independently (see _Regenerating_ below).
+
+The nested-loop pair is a second, complementary view. It emphasizes control flow rather than the
+deployed resource topology:
+
+- The **inner loop** follows the policy lifecycle and repository workflow names from goal intake
+  through planning, implementation, SHA-bound deterministic checks, independent review, bounded
+  repair, and the autonomous integration gate.
+- The **outer loop** starts from a verified merge to `main`, builds and attests one immutable ACR
+  image, uses GitHub OIDC for the Azure trust exchange, progressively shifts Container Apps
+  traffic, observes health/readiness/version/synthetic and Azure Monitor signals, and routes a
+  stable incident fingerprint to rollback or one deduplicated fix-forward goal.
+- The **self-modification guardrail** reflects `scripts/self-modification/evaluate.mjs` and
+  `.github/autonomy/policy.json`: isolated candidate evaluation, canonical scenario replay,
+  evidence and permission checks, an Ed25519-signed verdict plus integration-result attestation,
+  a bounded synthetic canary, and failure routing to canary reversion and a terminal incident.
+
+The editable and rendered nested-loop assets use the same node labels, positions, trust
+boundaries, and line-style legend. The SVG contains only inline vector shapes, text, CSS, and
+markers; it has no external image, font, script, or hyperlink dependency.
 
 ## Diagram conventions
 
