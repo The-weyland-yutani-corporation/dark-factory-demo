@@ -5,6 +5,7 @@ import {
   createReport,
   digest,
   executeScenario,
+  hasBicepLiteralSecrets,
   loadDemoDependencies,
 } from "./core.mjs";
 import {
@@ -20,6 +21,23 @@ const fixtures = suite.scenarios.map((scenario) => ({
   contract: { ...suite.goalDefaults, ...scenario.contract },
 }));
 const dependencies = await loadDemoDependencies();
+
+test("Bicep demo permits disabled empty inputs but rejects literal secrets and key access", () => {
+  assert.equal(
+    hasBicepLiteralSecrets("@secure()\nparam key string = ''"),
+    false,
+  );
+  assert.equal(hasBicepLiteralSecrets("@secure()\nparam key string"), false);
+  assert.equal(
+    hasBicepLiteralSecrets("@secure()\nparam key string = 'unsafe-example'"),
+    true,
+  );
+  assert.equal(hasBicepLiteralSecrets("var key = listKeys(resourceId)"), true);
+  assert.equal(
+    hasBicepLiteralSecrets("var key = listSecrets(resourceId)"),
+    true,
+  );
+});
 
 test("all local demonstrations reach their declared outcomes", async () => {
   const results = await Promise.all(

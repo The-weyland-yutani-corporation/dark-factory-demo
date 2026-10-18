@@ -1,0 +1,64 @@
+# Content draft: catalog access requires Microsoft enterprise SSO.
+# Field names and taxonomy are NOT verified against the catalog schema.
+name: Dark Factory Control Room
+id: dark-factory-control-room
+summary: Governed autonomous software delivery with visible evidence and bounded recovery.
+repository: https://github.com/The-weyland-yutani-corporation/dark-factory-demo
+customer_scope: Reusable / cross-industry
+industry: Cross-industry
+primary_persona: Platform engineering lead
+secondary_personas:
+  - Developer
+  - Site reliability engineer
+  - Security lead
+  - Solution engineer / cloud solution architect
+business_problem: Reduce delivery handoffs without losing verification, traceability, or recovery controls.
+value_proposition: Demonstrate a structured request-to-outcome journey before activating live automation.
+readiness:
+  current: demo-candidate
+  target: catalog-ready
+  certification: None; advisory assessment only
+technologies:
+  - GitHub Actions
+  - GitHub Copilot
+  - Azure Container Apps
+  - Azure Container Registry
+  - Microsoft Entra ID
+  - Azure Monitor
+  - Azure Functions
+  - Azure Key Vault
+  - Bicep
+  - Node.js / TypeScript / React
+documentation:
+  overview: README.md
+  setup_demo_engagement_support: docs/operations-runbook.md
+  architecture: docs/architecture.md
+  deployment: infra/README.md
+experience:
+  dashboard: Synthetic operational records by default
+  scenarios: Credential-free after dependency installation; simulated external effects
+  live: Requires configured GitHub/Azure services and a production operations adapter
+prerequisites:
+  local:
+    - Node.js 22 and npm 10 or newer
+    - Network access for initial dependency installation
+  live:
+    - GitHub App installation and required organization entitlements
+    - Azure subscription, scoped identities, and connected runners
+engagement:
+  motion: Discovery workshop followed by a scoped non-production pilot
+  measures:
+    - Acceptance criteria mapped to executable evidence
+    - Traceable mutations and idempotent retries
+    - Bounded stopping and verified recovery
+    - Baseline comparison of lead time and manual touches
+limitations:
+  - Offline scenarios do not update dashboard fixtures or deploy resources
+  - Sample metrics and costs are not measured customer outcomes
+  - Live deployment parameter files remain specific to the original demonstration
+submission:
+  schema_validated: false
+  license_confirmed: false
+  support_owner_confirmed: false
+  independent_presenter_verified: false
+  media_assets_complete: false

@@ -1,5 +1,211 @@
 # Operations runbook
 
+## Accelerator readiness
+
+**Dark Factory Control Room — Governed Autonomous Software Delivery** targets
+platform engineering leads in reusable, cross-industry engagements. The desired
+state is catalog-ready; the current state remains **demo candidate**, not a
+Microsoft certification. See `accelerator.yaml` for deliberately unvalidated
+submission metadata.
+
+Three publication priorities: prove the local presenter path; resolve portability,
+licensing and support ownership; package customer narrative, accessible media,
+and catalog-compatible metadata. The catalog URL currently redirects to Microsoft
+enterprise SSO; its API returned 404 in this environment. Schema/taxonomy
+validation requires authorized catalog access and is not claimed.
+
+### Customer journey and engagement
+
+Customer request: “Automate a low-risk service change with evidence and recovery.”
+
+1. **Input:** write the outcome, acceptance criteria, constraints, authorization,
+   risk, budget and rollback in the existing goal issue form.
+2. **Context:** validate policy, normalize the goal key, hash its contract, and
+   search for equivalent work before creating side effects.
+3. **Plan:** map criteria to executable evidence and reserve the strictest budget.
+4. **Change:** implement one bounded attempt; produce a PR and commit-bound checks.
+5. **Review:** an independent reviewer checks evidence; only authorized bounded
+   repairs proceed. Unsafe/exhausted work stops with an incident.
+6. **Deliver:** configured live workflows use attested images, progressive traffic
+   exposure and recovery checks.
+7. **Observe:** correlate failures; restore the prior revision or create one
+   bounded fix-forward goal.
+8. **Outcome/next action:** review evidence against a baseline and select the next
+   reversible pilot workload.
+
+Local scenarios **simulate** external effects. They do not create real issues,
+PRs, deployments, or dashboard updates. Dashboard metrics/costs are synthetic;
+live health checks alone do not establish production readiness.
+
+**Account-team opener:** Where could your teams remove delivery handoffs while
+retaining evidence, authorization boundaries, and a tested recovery path?
+
+**Discovery:** Which changes wait on coordination? What evidence must pass?
+What actions are authorized or prohibited? What are baseline lead time,
+manual touches, failure rate and recovery time? Which GitHub/Azure, identity,
+network and compliance constraints apply? Who owns recovery? Which reversible
+non-production workload is suitable?
+
+**Workshop/pilot:** map one journey with a repository owner and security/operations
+representative. Define authorization, acceptance checks, evidence, budget and
+rollback first; start offline, then activate only the agreed non-production
+integrations. Avoid factory self-modification as the first pilot. Deliver an
+adapted architecture, permission matrix, tests, recovery evidence and outcome report.
+
+**Success:** every criterion has executable proof; mutations trace to their goal
+and revision; retries create no duplicates; unsafe/exhausted work stops; a recovery
+exercise restores the expected revision; lead time/manual touches are compared
+with measured baselines; permissions remain within scope.
+
+**CTA:** bring one low-risk request and its owners; agree thresholds before
+enabling live automation. No customer savings or performance improvement is promised.
+
+## Presenter guide
+
+### Setup, expected results, and reset
+
+Run bootstrap below, then `npm run demo:list` to list all **ten** scenarios.
+Keep the built API running on port 3000. For UI development, start the API and
+`npm run dev:web` in separate terminals; open port 5173. The worker is optional.
+Export overrides such as `FACTORY_DATA_MODE=demo` in your shell; `.env` is
+preserved by bootstrap but is not automatically loaded by the runtime.
+
+Run each command from the repository root:
+
+```sh
+npm run demo -- --scenario normal-feature --output reports/demo/feature.json
+npm run demo -- --scenario failing-test-repair --output reports/demo/repair.json
+npm run demo -- --scenario deployment-regression --output reports/demo/rollback.json
+npm run demo -- --scenario malicious-prompt --output reports/demo/rejection.json
+npm run demo -- --scenario budget-exhaustion --output reports/demo/budget.json
+```
+
+Expected: each summary has `failed: 0` and `idempotent: true`.
+Inspect `scenarios[].outcome`, `evidence`, and simulated `sideEffects`:
+feature/repair → `production-ready-evidence` (a simulation label, not certification);
+regression → `rolled-back-incident-opened`; malicious input →
+`terminal-ignored-malicious-content`; budget → `terminal-budget-exhausted`.
+No service is contacted or changed.
+
+Reset by rerunning the same command: reports are overwritten and execution uses
+fresh simulated state. Refresh restores the fixed dashboard records; it does not
+load scenario reports. Stop the local API with Ctrl+C. Do not invoke GitHub
+reconciliation or Azure deployment during this walkthrough.
+
+### Five-minute flow
+
+| Time      | Action and narration                                                                          |
+| --------- | --------------------------------------------------------------------------------------------- |
+| 0:00–0:45 | Introduce a platform team's slow delivery handoffs; faster delivery needs visible boundaries. |
+| 0:45–1:45 | Open the dashboard; read the synthetic-data disclosure, show posture and audit correlation.   |
+| 1:45–2:45 | Run `normal-feature`; show the contract, checks and simulated outcome in its report.          |
+| 2:45–4:00 | Run `deployment-regression`; show restored traffic and the deduplicated incident.             |
+| 4:00–5:00 | Show architecture; agree one low-risk pilot and measurable acceptance criteria.               |
+
+### Fifteen-minute flow
+
+| Time      | Action and narration                                                                  |
+| --------- | ------------------------------------------------------------------------------------- |
+| 0–2 min   | Customer challenge and explicit simulation/live boundaries.                           |
+| 2–4 min   | Goal form: outcome, constraints, risk, evidence, rollback and budget.                 |
+| 4–6 min   | Dashboard: synthetic metrics, estimated costs, operations and expanded lineage.       |
+| 6–9 min   | Run feature and repair commands; inspect evidence and bounded retry behavior.         |
+| 9–11 min  | Run malicious-input and budget scenarios; show safe terminal outcomes.                |
+| 11–13 min | Run rollback scenario; contrast simulation with separately configured Azure delivery. |
+| 13–15 min | Review integration/permission gaps, pilot baseline and next-step agreement.           |
+
+**Fallback:** if execution fails, show previously captured assets with their source
+revision and limitations, or use architecture plus scenario fixtures as an explicitly
+non-executed explanation. Never claim a failed or recorded run is live success.
+
+### Reuse and live activation boundaries
+
+| Reuse                                        | Customize or review                                                     |
+| -------------------------------------------- | ----------------------------------------------------------------------- |
+| Goal forms, deduplication, bounded lifecycle | Authorized actions, customer risk and acceptance tests                  |
+| TypeScript contracts and React UI            | Branding, access control and production operations adapter              |
+| Ten deterministic scenarios                  | Synthetic customer request, measures, local evidence                    |
+| Verification and audit patterns              | Workload tests, policy thresholds, retention requirements               |
+| OIDC, immutable image and rollback patterns  | Subscription, App installation, networking, runners, recovery ownership |
+
+Keep a reusable submission free of operator identities and customer/internal links.
+**The checked-in `infra/main.demo*.bicepparam`, `.azure` evidence and live deployment
+documentation remain the original environment's baseline.** They are not generic
+customer defaults. Do not copy or deploy them unchanged. The infrastructure guide
+explains how to supply an external customer parameter file without altering that
+tested baseline. History is not anonymized by changing current files.
+
+The alert dispatcher now requires explicit `GITHUB_APP_ID`,
+`GITHUB_APP_INSTALLATION_ID`, `GITHUB_REPOSITORY_OWNER`, and
+`GITHUB_REPOSITORY_NAME`; missing/blank values fail before Key Vault/network access.
+Existing Bicep settings still explicitly target this demonstration; adaptation
+must replace those settings before activation. No credentials belong in examples.
+
+| Identity / operation              | Scope and boundary                                                                        |
+| --------------------------------- | ----------------------------------------------------------------------------------------- |
+| Local preview / offline scenarios | No GitHub/Azure credential required                                                       |
+| Delivery OIDC identity            | Registry-scoped AcrPush; Container App/job-scoped contributor                             |
+| Infrastructure identity           | Resource-group deployment and required role-assignment rights                             |
+| Agentic GitHub App                | Repository-limited safe-output permissions listed below; reasoning never receives the key |
+| Alert bridge identity/App         | Vault/storage roles below; repository dispatch needs Contents write                       |
+| Settings reconciliation           | Separate operator credential; never run by local validation                               |
+
+Review ingress/authentication before hosting: the API's policy preview accepts
+caller-supplied rules; it is **not** a protected production authorization service.
+CORS is not authentication. Review logs, screenshots and reports for secrets and
+personal data; do not publish real customer telemetry.
+
+**Cost drivers:** GitHub/Copilot entitlements and agent runs; connected runners;
+Premium ACR; Container Apps workload profiles; PostgreSQL compute/storage; private
+endpoints, Functions/storage, Key Vault, monitoring ingestion and retention.
+Local synthetic cost totals are not a quote. Use current regional pricing and a
+customer baseline; inventory resources and use teardown planning after a pilot.
+
+### Support, contribution, and publication gates
+
+Use issues only for sanitized questions with revision, Node/npm versions, command,
+expected/actual result and redacted logs. No SLA or dedicated support owner is
+established. For vulnerabilities, use private GitHub reporting only when enabled;
+otherwise obtain a private maintainer contact before sharing details.
+Do not assume public-source access grants redistribution rights: an owner-approved
+license and third-party attribution review remain required.
+
+To contribute an adaptation: use synthetic examples, document differences and
+rollback, map acceptance criteria to checks, preserve independent review and policy,
+and supply sanitized exact-revision evidence. Catalog contribution requires its
+authorized schema/taxonomy checks; this repository cannot attest to acceptance.
+
+| Gate          | Required evidence / current status                                                                                                                  |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Demo-ready    | Tested bootstrap, all scenarios/idempotency, explicit disclosure, accessible captures and scripts; see validation record below                      |
+| Field-ready   | Independent second-presenter replay, portable live configuration, privacy/security review, license, owner, permissions/cost guidance; still blocked |
+| Catalog-ready | Authorized schema validation, accepted taxonomy, media/links, license/support ownership and recorded limitations; still blocked                     |
+
+Preparation checklist: README/story and journey; architecture/alt text; timed script;
+setup/reset; deployment/rollback/cleanup; sample data and measures; screenshots,
+captions/transcript; security/privacy scrub; Copilot adaptation instructions;
+exact-head Actions/least privilege; support/license; catalog metadata.
+
+### Implementation assumptions and evidence
+
+This user-requested packaging pass does not activate the autonomous goal lifecycle,
+merge, deploy, or approve its own work. No triggering goal issue was provided;
+no issue contract digest or lifecycle attestation is fabricated.
+Material assumptions are conservative: cross-industry audience and catalog target
+come from the request; retain the tested live baseline (`tests/iac-parameters.test.ts`);
+use synthetic scenarios (`scripts/demo/fixtures/scenarios.json`); never grant a
+license or invent a support owner. Risk: low, reversible local/UI/configuration
+changes only; no permissions or workflows changed.
+
+Budget reserved before mutation: one implementation attempt, at most 25 files,
+1,500 changed text lines, 120 minutes, no more than eight workflow runs; zero live
+workflow dispatches, merges or deployments. Binary media are reported separately.
+Rollback: revert this packaging change; no resources or customer data are mutated.
+Acceptance/evidence mapping: narrative/journey/reuse/engagement → this guide;
+onboarding/navigation → README; honest preview → UI/accessibility test; portable
+dispatcher → adapter tests; offline journey → scenario self-tests/report;
+catalog submission → draft metadata with unresolved gates, not acceptance.
+
 ## Local bootstrap and demo
 
 ```sh

@@ -1,5 +1,29 @@
 # Azure infrastructure
 
+## Adapting safely for another account
+
+The checked-in `main.demo*.bicepparam` files are the original live demonstration
+baseline, not portable customer defaults. Do not deploy them unchanged or copy
+their operator identity into a customer submission. Preserve the tested baseline
+and prepare a customer-specific parameter file outside source control:
+use `main.bicep`, supply `namePrefix`, `environmentName`, `location`,
+`postgresAdministratorObjectId` (prefer a group) and
+`postgresAdministratorPrincipalName`; select the intended tenant/subscription
+and resource group explicitly. Start with `deployApplications=false` and keep
+registry public access disabled unless the scoped demo exception is intended.
+
+The alert-adapter module currently supplies this repository's App and repository
+settings. Replace all four `GITHUB_APP_ID`, `GITHUB_APP_INSTALLATION_ID`,
+`GITHUB_REPOSITORY_OWNER` and `GITHUB_REPOSITORY_NAME` settings for another account
+before publishing/enabling the adapter. Runtime defaults no longer route to the
+original account when configuration is absent. Provision the new App installation,
+private-key vault access and outbound connectivity; never copy a PEM or function
+key into parameters, logs or catalog assets.
+
+Use the runbook's what-if, permissions, image provenance, recovery and teardown
+procedures. A local demo does not authorize a deployment; the existing authorized
+goal/independent-review/integration path is unchanged.
+
 `main.bicep` deploys a secure, modular Azure baseline for the web, API, and
 worker workloads:
 

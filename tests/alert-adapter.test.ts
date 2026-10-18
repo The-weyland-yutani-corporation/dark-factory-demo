@@ -1,6 +1,6 @@
 import { generateKeyPairSync } from "node:crypto";
 import { HttpRequest, InvocationContext } from "@azure/functions";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { DeduplicationStore } from "../apps/alert-adapter/src/deduplication.js";
 import {
   createGitHubAppJwt,
@@ -69,6 +69,42 @@ class MemoryDeduplicationStore implements DeduplicationStore {
 }
 
 describe("Azure alert adapter", () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  const targetEnvironment = {
+    GITHUB_APP_ID: "12345",
+    GITHUB_APP_INSTALLATION_ID: "67890",
+    GITHUB_REPOSITORY_OWNER: "example-org",
+    GITHUB_REPOSITORY_NAME: "example-repo",
+    KEY_VAULT_URI: "https://example.vault.azure.net",
+  };
+
+  it.each(
+    Object.keys(targetEnvironment).filter((name) => name !== "KEY_VAULT_URI"),
+  )(
+    "refuses a missing or blank %s instead of dispatching to the demo account",
+    (name) => {
+      for (const [key, value] of Object.entries(targetEnvironment)) {
+        vi.stubEnv(key, value);
+      }
+      for (const value of [undefined, "", "   "]) {
+        vi.stubEnv(name, value);
+        expect(() => GitHubAppDispatcher.fromEnvironment()).toThrow(
+          `${name} is required.`,
+        );
+      }
+    },
+  );
+
+  it("uses explicitly configured targets without accessing Key Vault", () => {
+    for (const [key, value] of Object.entries(targetEnvironment)) {
+      vi.stubEnv(key, value);
+    }
+    expect(GitHubAppDispatcher.fromEnvironment()).toBeInstanceOf(
+      GitHubAppDispatcher,
+    );
+  });
+
   it("normalizes and enriches Container Apps common-alert-schema payloads", () => {
     const alert = normalizeAlert(commonPayload);
 

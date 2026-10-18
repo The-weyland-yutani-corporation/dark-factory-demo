@@ -12,3 +12,5 @@
 - Changes under `.github/workflows/` must preserve least privilege, bounded concurrency, idempotency, and terminal failure behavior.
 - Agentic workflow source changes require successful `gh aw compile --strict --validate --no-emit`.
 - If safe progress is impossible, stop mutation and create or update an incident with concrete evidence.
+- Customer adaptations must distinguish synthetic dashboard data, offline scenario simulation, and explicitly configured live automation; never claim customer outcomes from fixtures.
+- Do not activate live workflows, change tested account baselines, grant a license, or invent support ownership as part of demo packaging. Record unresolved publication gates instead.
