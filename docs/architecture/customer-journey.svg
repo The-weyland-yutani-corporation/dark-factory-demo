@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
+  <title id="title">Dark Factory customer journey</title>
+  <desc id="desc">An authorized goal passes policy, budget, implementation, checks and independent review. Configured live delivery observes and recovers; evidence informs the next goal. Offline demonstrations simulate external actions.</desc>
+  <rect width="1280" height="720" fill="#101827"/>
+  <g font-family="sans-serif" fill="#f1f5f9">
+    <text x="60" y="80" font-size="36">Governed automation. Visible evidence.</text>
+    <text x="60" y="130" font-size="22">Customer request → relevant context → useful outcome → next action</text>
+    <g fill="#18334b" stroke="#7dd3fc" stroke-width="2">
+      <rect x="60" y="210" width="330" height="140" rx="18"/>
+      <rect x="475" y="210" width="330" height="140" rx="18"/>
+      <rect x="890" y="210" width="330" height="140" rx="18"/>
+      <rect x="60" y="430" width="1160" height="140" rx="18"/>
+    </g>
+    <g font-size="26">
+      <text x="85" y="260">1. Authorized goal</text><text x="85" y="310" font-size="21">Outcome • constraints • rollback</text>
+      <text x="500" y="260">2. Bounded engineering</text><text x="500" y="310" font-size="21">Policy • checks • independent review</text>
+      <text x="915" y="260">3. Delivery / recovery</text><text x="915" y="310" font-size="21">Configured GitHub + Azure only</text>
+      <text x="405" y="290">→</text><text x="820" y="290">→</text>
+      <text x="85" y="480">Evidence and learning → next reversible pilot goal</text>
+      <text x="85" y="530" font-size="21">Unsafe or exhausted work stops. Failures route to bounded recovery or an incident.</text>
+    </g>
+    <text x="60" y="635" font-size="22">Local preview: synthetic metrics. Offline scenarios: simulated external effects.</text>
+    <text x="60" y="675" font-size="22">No live deployment, customer savings, or catalog certification is implied.</text>
+  </g>
+</svg>

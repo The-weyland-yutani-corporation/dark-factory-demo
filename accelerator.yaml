@@ -34,6 +34,11 @@ documentation:
   setup_demo_engagement_support: docs/operations-runbook.md
   architecture: docs/architecture.md
   deployment: infra/README.md
+assets:
+  screenshot: docs/media/control-room.png
+  scenario_evidence: docs/media/scenario-results.png
+  walkthrough: docs/media/walkthrough.webm
+  transcript: docs/media/walkthrough.vtt
 experience:
   dashboard: Synthetic operational records by default
   scenarios: Credential-free after dependency installation; simulated external effects
@@ -61,4 +66,4 @@ submission:
   license_confirmed: false
   support_owner_confirmed: false
   independent_presenter_verified: false
-  media_assets_complete: false
+  media_assets_complete: true

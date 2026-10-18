@@ -2,6 +2,13 @@
 
 ## Architecture diagrams
 
+For a customer introduction, start with the simplified journey:
+
+![Authorized goal through bounded engineering, configured delivery and recovery, then evidence-informed next action](architecture/customer-journey.svg)
+
+Offline scenarios simulate external actions; the dashboard is a separate preview,
+not a live representation of those scenario executions.
+
 The topology view shows the GitHub control plane, Azure runtime plane, trust
 boundaries, identity flows, deployment path, observability, and incident
 feedback loop.

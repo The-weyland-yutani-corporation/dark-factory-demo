@@ -206,6 +206,51 @@ onboarding/navigation → README; honest preview → UI/accessibility test; port
 dispatcher → adapter tests; offline journey → scenario self-tests/report;
 catalog submission → draft metadata with unresolved gates, not acceptance.
 
+### Validation record and media
+
+Captured on 2026-10-18 from implementation commit
+`99b012a73d3fe394c19171c0d2d554709e0a9040`, Node 24.21.0, npm 11.19.0,
+Chromium 155, using the built API on loopback in demo mode.
+The standalone synthetic goal and simplified diagram were added as media assets
+after that implementation commit; they are not live workflow evidence.
+
+| Asset                                          | Meaning / accessible equivalent                                                                      |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| [Control room](media/control-room.png)         | Full local dashboard; synthetic-data disclosure, posture, metrics, operations and ledger             |
+| [Decision lineage](media/decision-lineage.png) | Expanded synthetic goal/PR/commit/run/deployment/revision/trace correlation                          |
+| [Goal contract](media/goal-contract.png)       | Screenshot of the [synthetic goal example](media/sample-goal.html); no submitted authorization       |
+| [Scenario results](media/scenario-results.png) | Rendered excerpt of the actual successful report: feature, rollback and budget outcomes              |
+| [Five-minute video](media/walkthrough.webm)    | Captioned still-image walkthrough assembled from these captures; no audio or claim of live recording |
+| [Timed transcript](media/walkthrough.vtt)      | Full captions as accessible text; burned into the video as well                                      |
+
+The recorded `npm run demo` report digest is
+`ecf50e69e7dfea01c1d7df7440a9fc2ba8b5970ffd27552deada6cd73f0bc1d6`:
+10/10 scenarios passed, zero failed, idempotent replay true, no live services.
+Regenerate `reports/demo/report.json` with that command; reports are ignored,
+not a claimed permanent CI artifact. Report excerpt text comes from the actual
+summary/outcomes/side effects, not fabricated success states.
+
+Initial bootstrap reproduced an inaccessible registry hostname embedded in the
+lockfile. npm's `--omit-lockfile-registry-resolved` regenerated it without those
+tarball URLs; all pinned versions, integrity values and dependency relationships
+are unchanged. `npm ci` then succeeded. The scenario scanner also incorrectly
+classified the deliberately empty disabled alert key as a literal secret; it now
+matches the existing IaC rule and retains regression checks for nonempty literals
+and key/secret enumeration.
+
+Build, lint, typecheck, focused adapter/accessibility/baseline tests (15 tests),
+policy/schema validation, scenario self-tests (7 tests), and production dependency
+audit passed. Full `npm run verify` was attempted; its final status and unresolved
+checks must be consulted below rather than inferred from screenshots.
+The audit of all dependencies also reports pre-existing development-only findings;
+the production-only audit reports zero vulnerabilities. No dependency version was
+changed as part of making installation portable.
+
+Media are fallback assets, not proof of a fresh-machine Node 22 installation,
+a second-presenter replay, production security approval or catalog acceptance.
+Licensing, support ownership, live-baseline anonymization and catalog SSO/schema
+access remain publication gates. Do not submit the package as catalog-ready.
+
 ## Local bootstrap and demo
 
 ```sh

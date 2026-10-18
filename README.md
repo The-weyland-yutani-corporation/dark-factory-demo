@@ -42,6 +42,13 @@ Production telemetry requires a `FactoryOperationsAdapter`; unconfigured
 production mode fails closed. Sample metrics and costs are illustrative.
 See [readiness gates and evidence](docs/operations-runbook.md#accelerator-readiness).
 
+![Local control-room capture with explicit synthetic-data disclosure](docs/media/control-room.png)
+
+Watch the [five-minute captioned walkthrough](docs/media/walkthrough.webm)
+(recorded stills, no audio or live deployment), with an accessible
+[timed transcript](docs/media/walkthrough.vtt). See
+[media provenance and validation](docs/operations-runbook.md#validation-record-and-media).
+
 ## Start locally
 
 Requires Node.js 22 and npm 10 or newer. From the repository root:

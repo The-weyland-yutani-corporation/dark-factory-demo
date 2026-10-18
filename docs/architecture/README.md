@@ -9,6 +9,11 @@ affect production.
 
 ## Files
 
+The simplified [`customer-journey.svg`](customer-journey.svg) is an original,
+self-contained customer-facing overview with an embedded accessible description.
+It distinguishes local simulation from configured live delivery; edit this SVG
+directly. The detailed diagram sources below remain unchanged.
+
 | File                                                                                             | Purpose                                                                                                        |
 | ------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
 | [`dark-factory-architecture.drawio`](./dark-factory-architecture.drawio)                         | Editable source (open in [diagrams.net](https://app.diagrams.net) / the draw.io desktop or VS Code extension). |

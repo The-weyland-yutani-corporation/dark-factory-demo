@@ -1,0 +1,45 @@
+WEBVTT
+
+00:00.000 --> 00:30.000
+Dark Factory explores governed autonomous software delivery.
+This is a recorded still-image walkthrough, not a live customer deployment.
+
+00:30.000 --> 00:45.000
+Platform teams need faster delivery without losing control.
+Start with a request, acceptance checks, constraints and recovery ownership.
+
+00:45.000 --> 01:15.000
+The control room shows service posture and operational context.
+Its metrics and costs are synthetic examples, not customer results.
+
+01:15.000 --> 01:45.000
+The synthetic goal illustrates the contract, not submitted authorization.
+An owner must authorize the actual goal before live work proceeds.
+
+01:45.000 --> 02:15.000
+Run: npm run demo -- --scenario normal-feature
+The recorded report shows simulated production-ready evidence, not certification.
+
+02:15.000 --> 02:45.000
+The offline report passed all ten scenarios and idempotent replay.
+No GitHub or Azure service was contacted. Dashboard fixtures stay unchanged.
+
+02:45.000 --> 03:15.000
+Run: npm run demo -- --scenario deployment-regression
+The simulated regression restores traffic and opens one deduplicated incident.
+
+03:15.000 --> 03:45.000
+Budget exhaustion stops mutation; it does not authorize unlimited retries.
+Independent review and deterministic checks remain separate controls.
+
+03:45.000 --> 04:00.000
+Inspect audit correlation: goal, PR, commit, run, deployment and trace.
+These dashboard identifiers are illustrative, not live scenario updates.
+
+04:00.000 --> 04:30.000
+GitHub is the control plane; Azure is the configured runtime plane.
+Live telemetry requires an adapter; live automation needs explicit configuration.
+
+04:30.000 --> 05:00.000
+Bring one reversible non-production request and its owners.
+Agree evidence, permissions, a baseline and rollback before beginning a pilot.
