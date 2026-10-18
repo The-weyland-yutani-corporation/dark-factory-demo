@@ -77,14 +77,17 @@ export class GitHubAppDispatcher implements GitHubDispatcher {
   ) {}
 
   public static fromEnvironment(): GitHubAppDispatcher {
+    const required = (name: string): string => {
+      const value = process.env[name]?.trim();
+      if (!value) throw new Error(`${name} is required.`);
+      return value;
+    };
     return new GitHubAppDispatcher(
       {
-        appId: process.env.GITHUB_APP_ID ?? "5122991",
-        installationId: process.env.GITHUB_APP_INSTALLATION_ID ?? "168176539",
-        owner:
-          process.env.GITHUB_REPOSITORY_OWNER ??
-          "The-weyland-yutani-corporation",
-        repository: process.env.GITHUB_REPOSITORY_NAME ?? "dark-factory-demo",
+        appId: required("GITHUB_APP_ID"),
+        installationId: required("GITHUB_APP_INSTALLATION_ID"),
+        owner: required("GITHUB_REPOSITORY_OWNER"),
+        repository: required("GITHUB_REPOSITORY_NAME"),
       },
       KeyVaultPrivateKeyProvider.fromEnvironment(),
     );

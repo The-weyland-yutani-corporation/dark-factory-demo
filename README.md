@@ -1,4 +1,106 @@
+```text
+                 ___       ___       ___
+                |:::|     |:::|     |:::|
+                |:::|_____|:::|_____|:::|
+          ______|_______________________|______
+         /  DARK FACTORY  //  CONTROL ROOM     /|
+        /____________________________________/ |
+        |  [GOAL] --> [BUILD] --> [VERIFY]    | |
+        |                            |        | |
+        |  [LEARN] <-- [OBSERVE] <-- [SHIP]   | /
+        |____________________________________|/
+           Governed automation. Visible evidence.
+```
+
 # Dark Factory Control Room
+
+**Explore governed autonomous software delivery: from a structured request
+through verification and independent review to delivery and recovery.**
+
+For platform engineering leads, developers, SREs, security leads, and SEs/CSAs.
+Reusable across industries; no customer account is implied.
+
+## Customer story
+
+Platform teams want AI-assisted delivery without losing quality or control.
+Requests, reviews, releases, and incident evidence are often scattered across
+tools, making handoffs slow and decisions difficult to trace. Dark Factory
+demonstrates explicit authorization, bounded execution, independent review,
+and recovery evidence. Its local simulations help teams explore the pattern
+without connecting to production.
+
+## Choose your experience
+
+| Experience                 | What you get                                                        | Boundary                                             |
+| -------------------------- | ------------------------------------------------------------------- | ---------------------------------------------------- |
+| Control-room preview       | Service posture, synthetic metrics, goals, incidents, audit lineage | Not live GitHub/Azure operational telemetry          |
+| Offline scenarios          | Repeatable success, repair, rejection, rollback, exhaustion         | No real PRs, deployments, or dashboard updates       |
+| Configured live automation | GitHub/Azure workflow and infrastructure patterns                   | Requires explicit setup; not activated by quickstart |
+
+**Readiness: demo candidate, not catalog-ready or Microsoft certified.**
+Production telemetry requires a `FactoryOperationsAdapter`; unconfigured
+production mode fails closed. Sample metrics and costs are illustrative.
+See [readiness gates and evidence](docs/operations-runbook.md#accelerator-readiness).
+
+![Local control-room capture with explicit synthetic-data disclosure](docs/media/control-room.png)
+
+Watch the [five-minute captioned walkthrough](docs/media/walkthrough.webm)
+(recorded stills, no audio or live deployment), with an accessible
+[timed transcript](docs/media/walkthrough.vtt). See
+[media provenance and validation](docs/operations-runbook.md#validation-record-and-media).
+
+## Start locally
+
+Requires Node.js 22 and npm 10 or newer. From the repository root:
+
+```sh
+npm run bootstrap -- --apply
+npm run config:validate
+npm run demo:offline
+npm run dev:api
+```
+
+Open **http://localhost:3000**. Bootstrap preserves an existing `.env`, installs
+locked dependencies, and builds. Initial installation needs network access;
+the scenarios then run without credentials or GitHub/Azure calls.
+Environment overrides must be exported in your shell; copying `.env` alone
+does not load it into the API process.
+
+## Demonstrate and adapt
+
+Follow the [five- and fifteen-minute scripts](docs/operations-runbook.md#presenter-guide)
+and [setup, reset, and troubleshooting guide](docs/operations-runbook.md).
+The presenter guide includes customer discovery, pilot measures, reuse boundaries,
+and publication blockers.
+
+![Implemented GitHub control plane and Azure runtime architecture](docs/architecture/dark-factory-architecture.svg)
+
+**Goal → policy/budget checks → implementation → verification → independent
+review → progressive delivery → observation/recovery → next bounded goal.**
+See the [architecture and trust boundaries](docs/architecture.md).
+
+Live activation is separate: read the [operations runbook](docs/operations-runbook.md)
+and [infrastructure guide](infra/README.md). Azure resources and agent execution
+can incur charges. Teardown tooling emits a plan, not deletion.
+
+## Support, contribution, and licensing
+
+Use repository issues for **sanitized, non-sensitive** reproducibility questions;
+no response SLA or dedicated support owner is established. Never post credentials
+or vulnerability details publicly: use GitHub private vulnerability reporting
+only if enabled, otherwise obtain a private maintainer contact first.
+No license grant has been established; owner-approved licensing and attribution
+remain prerequisites for redistribution and catalog submission.
+
+Adapt one reversible non-production workflow first. Preserve policy, independent
+review, tests, least privilege, and recovery boundaries. Review
+[`accelerator.yaml`](accelerator.yaml) as a **metadata draft**, not a validated
+catalog submission.
+
+**Next step:** bring one low-risk change request, its repository owner, and an
+operations/security representative to define a measurable pilot.
+
+## Engineering reference
 
 Production-oriented Node.js 22 monorepo for an autonomous operations control
 room. It contains:

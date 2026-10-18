@@ -80,6 +80,9 @@ describe("Control Room accessibility", () => {
     );
     expect(screen.getByRole("main")).toBeInTheDocument();
     expect(
+      screen.getByRole("region", { name: "Demo limitations" }),
+    ).toHaveTextContent("Synthetic demo data");
+    expect(
       screen.getByRole("button", { name: "Refresh status" }),
     ).toBeEnabled();
     expect((await axe(container)).violations).toEqual([]);

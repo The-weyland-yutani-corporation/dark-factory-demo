@@ -32,6 +32,16 @@ export function FactoryDashboard({
 
   return (
     <>
+      {overview.source === "demo" && (
+        <section className="notice" aria-label="Demo limitations">
+          <strong>Synthetic demo data — not customer results</strong>
+          <span>
+            Metrics and costs are illustrative. Offline scenarios do not update
+            this dashboard or deploy resources. Live telemetry requires a
+            production operations adapter.
+          </span>
+        </section>
+      )}
       <section className="section-heading dashboard-heading">
         <div>
           <p className="eyebrow">Factory outcomes</p>

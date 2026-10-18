@@ -36,6 +36,14 @@ export function digest(value) {
   return createHash("sha256").update(stableJson(value)).digest("hex");
 }
 
+export function hasBicepLiteralSecrets(content) {
+  return (
+    /@secure\(\)[\s\S]{0,120}param\s+\w+\s+\w+\s*=\s*['"][^'"]+/m.test(
+      content,
+    ) || /\b(listKeys|listSecrets)\s*\(/i.test(content)
+  );
+}
+
 function evidence(id, detail) {
   return { id, status: "passed", detail };
 }
@@ -244,10 +252,7 @@ export async function executeScenario(fixture, options, dependencies) {
       ),
     );
     const noLiteralSecrets = files.every(
-      ({ content }) =>
-        !/@secure\(\)[\s\S]{0,120}param\s+\w+\s+\w+\s*=\s*['"]/m.test(
-          content,
-        ) && !/\b(listKeys|listSecrets)\s*\(/i.test(content),
+      ({ content }) => !hasBicepLiteralSecrets(content),
     );
     const valid =
       protectedFiles &&
