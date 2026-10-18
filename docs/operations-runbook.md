@@ -246,6 +246,17 @@ The audit of all dependencies also reports pre-existing development-only finding
 the production-only audit reports zero vulnerabilities. No dependency version was
 changed as part of making installation portable.
 
+Final verifier result: **19 of 20 checks passed**, including 57 unit tests with
+coverage, Bicep compile, workflow validation and mutation score 80.63% (threshold
+80%). Overall verification **failed**, solely because `agentic-sync` could not
+access the pinned `gh-aw` compiler (GitHub release access returned 403). The
+evidence manifest therefore does not pass policy. No check was skipped or weakened.
+CodeQL found zero JavaScript alerts. The packaged automated review binary was
+unavailable; a separate read-only review agent reported no substantive findings.
+The exact documented bootstrap/configuration/demo quickstart also passed on replay.
+This is not lifecycle approval or an independent customer presenter replay.
+See [machine-readable validation and media hashes](media/validation.json).
+
 Media are fallback assets, not proof of a fresh-machine Node 22 installation,
 a second-presenter replay, production security approval or catalog acceptance.
 Licensing, support ownership, live-baseline anonymization and catalog SSO/schema

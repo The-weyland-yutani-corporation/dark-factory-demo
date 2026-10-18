@@ -1,0 +1,68 @@
+{
+  "recordedAt": "2026-10-18T16:50:06Z",
+  "implementationCommit": "99b012a73d3fe394c19171c0d2d554709e0a9040",
+  "mediaPackageCommit": "d4da2db3640a47e966438932030581db33f6800e",
+  "environment": {
+    "node": "24.21.0",
+    "npm": "11.19.0",
+    "chromium": "155.0.8059.0",
+    "dataMode": "demo"
+  },
+  "validation": {
+    "documentedQuickstartReplay": "bootstrap --apply, config:validate and demo passed after lockfile fix",
+    "policySchema": "passed: Draft 2020-12",
+    "fullVerify": "failed: 19 of 20 checks passed",
+    "blocker": "agentic-sync: pinned gh-aw unavailable; release access returned 403",
+    "unitTestsPassed": 57,
+    "scenarioSelfTestsPassed": 7,
+    "mutationScore": 80.63,
+    "productionAuditVulnerabilities": 0,
+    "developmentAudit": "pre-existing: source-map-js high; qs and typed-rest-client moderate",
+    "codeqlAlerts": 0,
+    "packagedCodeReview": "unavailable binary",
+    "independentReadOnlyAgentReview": "no substantive findings; no lifecycle approval",
+    "sampleGoalAccessibility": "axe: zero violations",
+    "mediaValidation": "local links, SVG XML, 300-second captions and video decoding passed",
+    "catalogSchema": "unvalidated: enterprise SSO required"
+  },
+  "scenarioReport": {
+    "command": "npm run demo",
+    "path": "reports/demo/report.json",
+    "retained": "regenerated locally; ignored by git",
+    "reportDigest": "ecf50e69e7dfea01c1d7df7440a9fc2ba8b5970ffd27552deada6cd73f0bc1d6",
+    "passed": 10,
+    "failed": 0,
+    "idempotent": true,
+    "liveServicesCalled": []
+  },
+  "mediaSha256": {
+    "control-room.png": "c810a610e67309cab2da1b32c2800153ac23beab39322d6aebc6908935c9f08a",
+    "decision-lineage.png": "fcef2c3f63ef561b7b85d02218438f9ecdf7896c9bfcb346323b6390b9c88dd0",
+    "goal-contract.png": "c9d77f6af7dab013bf4c83b079893a27184f70912baa47e350f3f9457d269374",
+    "scenario-results.png": "952dac43fa3435de1ad62634ac88b8b29a0825d201b5eaf17b66e8d785bf3f69",
+    "walkthrough.webm": "f9b93527a6462337e9fc089fb498187b90338e91f691c0116d55011d9eddf340",
+    "walkthrough.vtt": "b52649971e9c1b2f0a891f6fffec0955ae181ecb8530d26f670265b6e7e09146"
+  },
+  "budget": {
+    "risk": "low",
+    "implementationAttempts": 1,
+    "repairAttempts": 0,
+    "changedFiles": 23,
+    "changedTextLines": 1457,
+    "binaryMediaBytes": 1358885,
+    "wallClockMinutesAtValidation": 18,
+    "maxChangedFiles": 25,
+    "maxChangedTextLines": 1500,
+    "maxWallClockMinutes": 120,
+    "workflowDispatches": 0,
+    "merges": 0,
+    "deployments": 0
+  },
+  "publicationGates": [
+    "Owner-approved license and third-party attribution",
+    "Support ownership and private security reporting contact",
+    "Customer-specific live configuration and privacy review",
+    "Second-presenter reproduction and successful full verification",
+    "Authorized catalog schema and submission validation"
+  ]
+}
