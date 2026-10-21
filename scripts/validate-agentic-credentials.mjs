@@ -36,10 +36,11 @@ for (const source of sources) {
 
 for (const lock of locks) {
   const content = await readFile(`${root}/${lock}`, "utf8");
-  const safeOutputJob = content.split(/\n {2}safe_outputs:\n/)[1] ?? "";
+  const safeOutputJob = content.split(/\r?\n {2}safe_outputs:\r?\n/)[1] ?? "";
   const agentJob =
-    content.split(/\n {2}agent:\n/)[1]?.split(/\n {2}[A-Za-z0-9_-]+:\n/)[0] ??
-    "";
+    content
+      .split(/\r?\n {2}agent:\r?\n/)[1]
+      ?.split(/\r?\n {2}[A-Za-z0-9_-]+:\r?\n/)[0] ?? "";
   if (!safeOutputJob.includes("DARK_FACTORY_MAGE_APP_PRIVATE_KEY")) {
     errors.push(`${lock} does not mint a GitHub App safe-output token`);
   }
@@ -118,8 +119,8 @@ const maintenance = await readFile(
 ).catch(() => "");
 const replayJob =
   maintenance
-    .split(/\n {2}apply_safe_outputs:\n/)[1]
-    ?.split(/\n {2}create_labels:\n/)[0] ?? "";
+    .split(/\r?\n {2}apply_safe_outputs:\r?\n/)[1]
+    ?.split(/\r?\n {2}create_labels:\r?\n/)[0] ?? "";
 if (
   !replayJob.includes(appAction) ||
   !replayJob.includes("DARK_FACTORY_MAGE_APP_PRIVATE_KEY") ||
