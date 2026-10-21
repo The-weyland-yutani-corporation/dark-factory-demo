@@ -1,0 +1,13 @@
+[
+  ["incident", 1, "Canary regression", 0, "blocked", []],
+  ["goal", 1, "Bounded recovery", 1, "queued", ["incident:synthetic-1"]],
+  ["pr", 1, "Reversible change", 2, "queued", ["goal:synthetic-1"]],
+  ["check", 1, "Verification", 3, "blocked", ["pr:synthetic-1"]],
+  ["review", 1, "Changes requested", 4, "blocked", ["pr:synthetic-1"]],
+  ["pr", 2, "Reviewed change", 5, "succeeded", []],
+  ["deployment", 1, "Canary", 6, "running", ["pr:synthetic-2"]],
+  ["workflow", 1, "Observation", 7, "succeeded", ["deployment:synthetic-1"]],
+  ["goal", 2, "Paused goal", null, "paused", []],
+  ["goal", 3, "Budget exhausted", null, "terminal", []],
+  ["workflow", 2, "Unclassified", null, "unknown", []]
+]

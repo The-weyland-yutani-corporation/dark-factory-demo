@@ -50,4 +50,11 @@ export default tseslint.config(
       globals: globals.node,
     },
   },
+  {
+    files: [
+      ".github/extensions/factory-observatory/ui.mjs",
+      "tests/factory-observatory-ui.test.mjs",
+    ],
+    languageOptions: { globals: globals.browser },
+  },
 );

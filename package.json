@@ -63,6 +63,7 @@
     "@types/jest-axe": "^3.5.9",
     "@types/node": "^22.10.2",
     "@vitest/coverage-v8": "^5.0.2",
+    "ajv2020": "npm:ajv@8.20.0",
     "eslint": "^9.17.0",
     "eslint-plugin-react-hooks": "^5.1.0",
     "globals": "^15.14.0",

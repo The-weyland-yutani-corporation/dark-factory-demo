@@ -20,7 +20,10 @@ export default defineConfig({
     pool: "threads",
     maxWorkers: 2,
     minWorkers: 1,
-    include: ["tests/**/*.test.{ts,tsx}"],
+    include: [
+      "tests/**/*.test.{ts,tsx}",
+      "tests/factory-observatory*.test.mjs",
+    ],
     setupFiles: ["./tests/setup.ts"],
     coverage: {
       reporter: ["text", "json-summary", "lcov"],
