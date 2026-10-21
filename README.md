@@ -80,6 +80,9 @@ Select a station or item for linked evidence, use the accessible work list in na
 panels, and step or scrub offline history. Visible Live panels poll at most once per
 minute; refreshes coalesce, and failures remain stale/partial instead of changing modes.
 Collections are capped at 100 records and observed history at 1,000 events.
+Evidence excerpts replace complete or unfinished HTML comments with spaces before
+credential redaction and truncation, so surrounding text cannot form a new comment
+opener. Excerpts are rendered as plain text, never interpreted as HTML.
 The first snapshot invents no earlier movement; shared commits/references do not
 prove causality, review independence, or production health.
 Session-artifact caches survive new panels and extension reloads, not session deletion.

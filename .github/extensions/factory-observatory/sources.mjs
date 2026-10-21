@@ -131,7 +131,7 @@ export async function selected(snapshot, id, signal, execute) {
   } else if (["goal", "issue", "incident"].includes(item.kind)) {
     const comments = await reader.get(`/issues/${number}/comments?per_page=100`);
     const evidence = comments.filter(c => /contract digest|budget reserved|repair|evidence/i.test(c.body ?? "")).slice(-5);
-    item.detail = text(evidence.map(c => `${text(c.body).replace(/<!--[\s\S]*?-->/g, "").slice(0, 260)}\n${safeUrl(c.html_url, snapshot.repository) ?? ""}`).join("\n\n")) || "No supported budget/evidence comments observed. Usage remains unknown.";
+    item.detail = text(evidence.map(c => `${text(String(c.body ?? "").replace(/<!--[\s\S]*?(?:-->|$)/g, " ")).slice(0, 260)}\n${safeUrl(c.html_url, snapshot.repository) ?? ""}`).join("\n\n")) || "No supported budget/evidence comments observed. Usage remains unknown.";
   } else if (item.kind === "deployment") {
     const statuses = await reader.get(`/deployments/${number}/statuses?per_page=100`);
     const latest = statuses[0];

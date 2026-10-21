@@ -39,6 +39,8 @@ it.each([false, true])(
       "owner/factory",
     );
     snapshot.entities[0].title = "<img src=x onerror=alert(1)>";
+    snapshot.entities[0].detail =
+      "evidence <img src=x onerror=alert(1)> <script>alert(1)</script>";
     snapshot.events = [
       {
         id: "old",
@@ -52,7 +54,7 @@ it.each([false, true])(
     ];
     const state = {
       snapshot,
-      selectedId: null,
+      selectedId: snapshot.entities[0].id,
       position: 0,
       error: null,
       relatedIds: [],
@@ -71,6 +73,10 @@ it.each([false, true])(
     await import("../.github/extensions/factory-observatory/ui.mjs");
     expect(document.querySelectorAll(".station")).toHaveLength(8);
     expect(document.querySelectorAll(".pulse, img")).toHaveLength(0);
+    expect(document.querySelectorAll("#inspector script")).toHaveLength(0);
+    expect(document.querySelector("#inspector pre").textContent).toContain(
+      snapshot.entities[0].detail,
+    );
     expect(document.getElementById("status").textContent).toContain(
       "SYNTHETIC PREVIEW",
     );

@@ -79,6 +79,159 @@ afterEach(async () => {
 });
 const observe = () => normalize(structuredClone(raw), repository, control.meta);
 
+const commentCases = [
+  [
+    "ordinary text stays literal",
+    "evidence ordinary <b>text</b> & 2 < 3",
+    "evidence ordinary <b>text</b> & 2 < 3",
+  ],
+  [
+    "complete comment separates visible text",
+    "evidence before<!-- hidden -->after",
+    "evidence before after",
+  ],
+  [
+    "overlapping opener",
+    "evidence <<!-- removed -->!-- remainder",
+    "evidence < !-- remainder",
+  ],
+  [
+    "opener split after exclamation mark",
+    "evidence <!<!-- removed -->-- remainder",
+    "evidence <! -- remainder",
+  ],
+  [
+    "opener split after first hyphen",
+    "evidence <!-<!-- removed -->- remainder",
+    "evidence <!- - remainder",
+  ],
+  [
+    "opener split across several comments",
+    "evidence <<!-- one -->!<!-- two -->-<!-- three -->- remainder",
+    "evidence < ! - - remainder",
+  ],
+  [
+    "adjacent comments",
+    "evidence before<!-- one --><!-- two -->after",
+    "evidence before  after",
+  ],
+  ["unfinished comment", "evidence visible <!-- hidden", "evidence visible  "],
+  [
+    "multiline comment",
+    "evidence before<!-- hidden\nstill hidden\r\n-->after",
+    "evidence before after",
+  ],
+  [
+    "unfinished multiline comment",
+    "evidence before<!-- hidden\nstill hidden",
+    "evidence before ",
+  ],
+  [
+    "comment beyond the text truncation boundary",
+    `evidence before<!--${"hidden".repeat(400)}-->after`,
+    "evidence before after",
+  ],
+  [
+    "comment removal precedes credential redaction",
+    "evidence Bearer <!-- hidden -->after",
+    "evidence [redacted]",
+  ],
+  [
+    "visible credentials stay redacted",
+    "evidence<!-- hidden --> github_pat_example ghp_example Bearer example",
+    "evidence  [redacted] [redacted] [redacted]",
+  ],
+  [
+    "comment at the excerpt boundary",
+    `evidence ${"x".repeat(246)}<!-- hidden -->tail`,
+    `evidence ${"x".repeat(246)} tail`,
+  ],
+  [
+    "credential across the excerpt boundary",
+    `evidence ${"x".repeat(245)} ghp_example`,
+    `evidence ${"x".repeat(245)} [redacted]`.slice(0, 260),
+  ],
+];
+
+it.each(
+  ["goal", "issue", "incident"].flatMap((kind) =>
+    commentCases.map(([name, body, excerpt]) => ({
+      kind,
+      name,
+      body,
+      excerpt,
+    })),
+  ),
+)("reads $kind evidence: $name", async ({ kind, body, excerpt }) => {
+  const snapshot = observe();
+  snapshot.entities[0].kind = kind;
+  const url = `https://github.com/${repository}/issues/1#issuecomment-1`;
+  const result = await selected(
+    snapshot,
+    "issue:1",
+    null,
+    async (_command, args) => {
+      expect(args.at(-1)).toBe(
+        `repos/${repository}/issues/1/comments?per_page=100`,
+      );
+      return response([{ body, html_url: url }]);
+    },
+  );
+  expect(result.entities[0].detail).toBe(`${excerpt}\n${url}`);
+  expect(result.entities[0].detail).not.toContain("<!--");
+});
+
+it.each(["goal", "issue", "incident"])(
+  "bounds %s evidence and preserves the owning-repository URL allowlist",
+  async (kind) => {
+    const urls = [
+      "javascript:alert(1)",
+      "https://github.com/elsewhere/repo/issues/1",
+      `https://github.com/${repository}/issues/1?token=example`,
+      `https://user:password@github.com/${repository}/issues/1`,
+      `https://github.com/${repository}/issues/1#issuecomment-7`,
+    ];
+    const comments = [
+      { body: "evidence old one" },
+      { body: "evidence old two" },
+      ...urls.map((url, index) => ({
+        body: `evidence ${index} ${"x".repeat(300)} ghp_example`,
+        html_url: url,
+      })),
+      { body: "unrelated newest comment" },
+    ];
+    const read = async (values) => {
+      const snapshot = observe();
+      snapshot.entities[0].kind = kind;
+      const result = await selected(snapshot, "issue:1", null, async () =>
+        response(values),
+      );
+      return result.entities[0].detail;
+    };
+    const detail = await read(comments);
+    expect(detail).toBe(
+      urls
+        .map(
+          (url, index) =>
+            `${comments[index + 2].body.slice(0, 260)}\n${index === 4 ? url : ""}`,
+        )
+        .join("\n\n"),
+    );
+    expect(detail.length).toBeLessThanOrEqual(1800);
+    expect(
+      await read([
+        {
+          body: "evidence bounded",
+          html_url: `https://github.com/${repository}/${"x".repeat(2000)}`,
+        },
+      ]),
+    ).toHaveLength(1800);
+    expect(await read([{ body: "unrelated" }])).toBe(
+      "No supported budget/evidence comments observed. Usage remains unknown.",
+    );
+  },
+);
+
 it("preserves identities and relationships without inventing initial history or stale success", () => {
   const first = reconcile(observe());
   expect(first.entities[0]).toMatchObject({ phase: 2, activity: "unknown" });
