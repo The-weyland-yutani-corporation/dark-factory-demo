@@ -66,6 +66,27 @@ the scenarios then run without credentials or GitHub/Azure calls.
 Environment overrides must be exported in your shell; copying `.env` alone
 does not load it into the API process.
 
+## Factory Observatory canvas
+
+After `npm ci`, reload project extensions in Copilot and open **Factory Observatory**
+with `{ "mode": "synthetic" }`, `{ "mode": "live" }`, or
+`{ "mode": "replay", "replayPath": "reports/demo/report.json" }`.
+The canvas needs no web build or running API. Live mode uses an already authenticated
+GitHub CLI for owning-repository **GETs only**; it never activates factory workflows.
+Synthetic Preview is fictional. Offline Replay imports an existing report from
+`reports/demo` or the current session's artifact workspace; it does not run scenarios.
+
+Select a station or item for linked evidence, use the accessible work list in narrow
+panels, and step or scrub offline history. Visible Live panels poll at most once per
+minute; refreshes coalesce, and failures remain stale/partial instead of changing modes.
+Collections are capped at 100 records and observed history at 1,000 events.
+Evidence excerpts replace complete or unfinished HTML comments with spaces before
+credential redaction and truncation, so surrounding text cannot form a new comment
+opener. Excerpts are rendered as plain text, never interpreted as HTML.
+The first snapshot invents no earlier movement; shared commits/references do not
+prove causality, review independence, or production health.
+Session-artifact caches survive new panels and extension reloads, not session deletion.
+
 ## Demonstrate and adapt
 
 Follow the [five- and fifteen-minute scripts](docs/operations-runbook.md#presenter-guide)
