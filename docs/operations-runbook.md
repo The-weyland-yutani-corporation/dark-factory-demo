@@ -314,10 +314,19 @@ Both request an App-authenticated extra commit so normal CI events fire. Do not
 configure `GH_AW_GITHUB_TOKEN`, `GH_AW_CI_TRIGGER_TOKEN`, a user PAT, or
 `assign-to-agent`.
 
-Validate the compiled credential boundary without exposing the secret:
+Validate the compiled credential boundary locally, without credentials or
+network access. This static check supports both LF and CRLF checkouts:
 
 ```sh
 npm run verify:agentic-credentials
+```
+
+A static pass does not verify App installation, permissions, billing, or live
+factory readiness. The optional `--runtime` check below is privileged: it reads
+the private key, mints an installation token, and calls GitHub. Run it only under
+explicit setup authority, without exposing the secret:
+
+```sh
 DARK_FACTORY_MAGE_APP_CLIENT_ID=... \
 DARK_FACTORY_MAGE_APP_PRIVATE_KEY_PATH=path/to/private-key.pem \
 GITHUB_REPOSITORY=The-weyland-yutani-corporation/dark-factory-demo \
