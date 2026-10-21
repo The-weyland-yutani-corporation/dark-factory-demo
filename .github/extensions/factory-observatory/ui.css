@@ -1,0 +1,42 @@
+body {
+  margin: 16px;
+  font: 14px/1.5 var(--font-sans, system-ui);
+  color: var(--text-color-default, #e5eae6);
+  background: var(--background-color-default, #0e1510);
+  overflow-wrap: anywhere;
+}
+:root { color-scheme: dark; }
+[data-color-mode="light"] { color-scheme: light; }
+main { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 20px; }
+nav, .map-tools, #playback, #rail { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+button, select, input { font: inherit; color: inherit; background: transparent; border: 1px solid var(--border-color-default, #6f8376); padding: 8px; }
+button { cursor: pointer; min-height: 40px; }
+label { display: inline-flex; gap: 5px; align-items: center; }
+:focus-visible { outline: 3px solid var(--color-focus-outline, #249eff); outline-offset: 3px; }
+[hidden] { display: none !important; }
+h1 { font-size: clamp(24px, 3vw, 36px); margin: 0; }
+h2 { font-size: 16px; }
+.eyebrow, .legend { font-size: 12px; }
+#status, #error { padding: 12px 0; }
+#error { color: var(--text-color-default, #ffc997); }
+svg { width: 100%; display: block; }
+.station { cursor: pointer; }
+.station circle { fill: var(--background-color-default, #0e1510); stroke: #b378e9; stroke-width: 2; }
+.station.selected circle, .station.related circle { stroke: #249eff; stroke-width: 4; }
+svg text { fill: currentColor; text-anchor: middle; font: 17px var(--font-sans, system-ui); }
+.count, .caption { font-size: 14px; }
+.mission { font-size: 27px; font-weight: 700; }
+.route, .repair { fill: none; stroke: #12b956; stroke-width: 2; }
+.repair { stroke: #249eff; stroke-dasharray: 5 6; }
+.work { display: block; text-align: left; margin: 8px 0; width: 100%; }
+.work small { display: block; }
+.chosen { border-color: #249eff; }
+#items, #events { max-height: 440px; overflow: auto; }
+#items { padding: 0; list-style: none; }
+pre { white-space: pre-wrap; }
+#rail .work { width: auto; max-width: 280px; }
+a { color: inherit; }
+.pulse circle { animation: observed 1.6s ease-out 1; }
+@keyframes observed { 50% { stroke-width: 7; stroke: #12b956; } }
+@media (max-width: 850px) { main { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .pulse circle { animation: none; } }
