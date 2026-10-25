@@ -4,8 +4,6 @@ on:
   workflow_run:
     workflows: ["Independent pull request review"]
     types: [completed]
-  merge_group:
-    types: [checks_requested]
   workflow_dispatch:
     inputs:
       head_sha:
@@ -27,7 +25,7 @@ permissions:
   pull-requests: read
 
 concurrency:
-  group: autonomous-integration-${{ github.event.merge_group.head_sha || github.event.workflow_run.pull_requests[0].head.sha || github.event.workflow_run.head_sha || inputs.head_sha }}
+  group: autonomous-integration-${{ github.event.workflow_run.pull_requests[0].head.sha || github.event.workflow_run.head_sha || inputs.head_sha }}
   cancel-in-progress: false
 
 jobs:
@@ -148,38 +146,3 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.lifecycle-token.outputs.token }}
         run: node scripts/integration/merge.mjs
-
-  merge-group:
-    if: github.event_name == 'merge_group'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    permissions:
-      checks: write
-      contents: read
-      issues: read
-      pull-requests: read
-    env:
-      MERGE_GROUP_SHA: ${{ github.event.merge_group.head_sha }}
-      MERGE_GROUP_RESULT: .integration/merge-group-result.json
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          persist-credentials: false
-      - name: Revalidate every queued pull request
-        id: validate
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: node scripts/integration/validate-merge-group.mjs
-      - name: Publish the merge-group integration check
-        if: always()
-        env:
-          CHECK_SHA: ${{ env.MERGE_GROUP_SHA }}
-          CHECK_CONCLUSION: ${{ steps.validate.outcome == 'success' && 'success' || 'failure' }}
-          CHECK_SUMMARY: ${{ steps.validate.outcome == 'success' && 'Every queued pull request retains exact-head evidence and merging lifecycle state.' || 'One or more queued pull requests no longer satisfy autonomous integration policy.' }}
-          CHECK_DETAILS_PATH: ${{ env.MERGE_GROUP_RESULT }}
-          GITHUB_CHECK_TOKEN: ${{ github.token }}
-        run: node scripts/integration/publish-check.mjs
-      - name: Enforce the merge-group decision
-        if: steps.validate.outcome != 'success'
-        run: exit 1
