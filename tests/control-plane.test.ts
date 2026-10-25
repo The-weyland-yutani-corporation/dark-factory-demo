@@ -53,6 +53,48 @@ describe("GitHub integration control plane", () => {
     expect(workflows[2]).toContain("container.sarif");
   });
 
+  it("keeps required checks in one PR and merge-group run within the run budget", async () => {
+    const [ci, codeSecurity, containerSecurity] = await Promise.all(
+      ["ci.yml", "code-security.yml", "container-security.yml"].map((name) =>
+        readFile(`.github/workflows/${name}`, "utf8"),
+      ),
+    );
+    for (const job of ["verify", "dependency-security", "codeql", "trivy"]) {
+      expect(ci).toMatch(new RegExp(`^  ${job}:`, "m"));
+    }
+    expect(ci).toMatch(/^  pull_request:/m);
+    expect(ci).toMatch(/^  merge_group:/m);
+    expect(ci).not.toMatch(/^  push:/m);
+
+    for (const workflow of [codeSecurity, containerSecurity]) {
+      expect(workflow).not.toMatch(/^  push:/m);
+      expect(workflow).not.toMatch(/^  pull_request:/m);
+      expect(workflow).not.toMatch(/^  merge_group:/m);
+      expect(workflow).toMatch(/^  schedule:/m);
+      expect(workflow).toMatch(/^  workflow_dispatch:/m);
+    }
+
+    const reservedRuns = {
+      pullRequestVerification: 1,
+      platformManagedPullRequestChecks: 2,
+      independentReview: 1,
+      postReviewIntegration: 1,
+      mergeGroupVerification: 1,
+      postMergeCompletion: 1,
+    };
+    const runCount = Object.values(reservedRuns).reduce(
+      (total, count) => total + count,
+      0,
+    );
+    const policy = JSON.parse(
+      await readFile(".github/autonomy/policy.json", "utf8"),
+    ) as { budgets: { global: { maxWorkflowRunsPerGoal: number } } };
+    expect(runCount).toBe(7);
+    expect(runCount).toBeLessThanOrEqual(
+      policy.budgets.global.maxWorkflowRunsPerGoal,
+    );
+  });
+
   it("reconciles controls in bootstrap-safe order with durable JSON", async () => {
     const script = await readFile("scripts/reconcile-github.mjs", "utf8");
     expect(script).toContain(
@@ -64,15 +106,23 @@ describe("GitHub integration control plane", () => {
     expect(script).toContain("dark-factory-reconcile:");
   });
 
-  it("publishes the integration context for pull heads and merge groups", async () => {
-    const workflow = await readFile(
-      ".github/workflows/autonomous-integration.yml",
-      "utf8",
+  it("publishes merge-group evidence from CI and retains review-triggered integration", async () => {
+    const [ci, integration] = await Promise.all([
+      readFile(".github/workflows/ci.yml", "utf8"),
+      readFile(".github/workflows/autonomous-integration.yml", "utf8"),
+    ]);
+    expect(ci).toContain("  merge_group:");
+    expect(ci).toContain("  merge-group:");
+    expect(ci).toContain("checks: write");
+    expect(ci).toContain("scripts/integration/validate-merge-group.mjs");
+    expect(ci).toContain("scripts/integration/publish-check.mjs");
+    expect(ci).toContain("GITHUB_CHECK_TOKEN: ${{ github.token }}");
+    expect(integration).toContain("workflow_run:");
+    expect(integration).toContain(
+      'workflows: ["Independent pull request review"]',
     );
-    expect(workflow).toContain("merge_group:");
-    expect(workflow).toContain("types: [checks_requested]");
-    expect(workflow).toContain("checks: write");
-    expect(workflow).toContain("  merge-group:");
+    expect(integration).not.toMatch(/^  merge_group:/m);
+    expect(integration).not.toMatch(/^  merge-group:/m);
 
     const publisher = await readFile(
       "scripts/integration/publish-check.mjs",

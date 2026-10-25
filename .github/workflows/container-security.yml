@@ -1,9 +1,5 @@
 name: Container and IaC security
 on:
-  push:
-    branches: ["main"]
-  pull_request:
-  merge_group:
   schedule:
     - cron: "41 5 * * 1"
   workflow_dispatch:
