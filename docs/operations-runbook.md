@@ -397,6 +397,19 @@ tokens.
 
 ### Local verification
 
+`@azure/identity` is pinned to `4.13.0`, whose supported dependency range is
+`@azure/msal-node ^3.5.0`. The previous caret range resolved Identity `4.13.3`
+and MSAL Node `6.0.1`, affected by
+[GHSA-xcx6-jx8p-x3h5](https://github.com/advisories/GHSA-xcx6-jx8p-x3h5)
+(`>=5.0.0-beta.0 <7.1.0`). Do not force a transitive MSAL major override.
+Remove or replace this pin only when a supported Identity release selects an
+unaffected MSAL chain; update the pin regression and rerun adapter checks and
+the unchanged `npm run scan:dependencies` high/critical gate. Regenerate with
+`npm install --package-lock-only --omit-lockfile-registry-resolved`, then run
+`npm ci` and `npm ls @azure/identity @azure/msal-node`. Keep registry-neutral
+lock entries and integrity checks. These offline checks do not establish live
+credential compatibility; that remains a separate prerequisite for activation.
+
 Azure Functions Core Tools is optional for repository validation. The tested
 business logic does not need live Azure or GitHub access:
 
