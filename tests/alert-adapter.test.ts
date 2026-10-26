@@ -1,6 +1,7 @@
 import { generateKeyPairSync } from "node:crypto";
 import { HttpRequest, InvocationContext } from "@azure/functions";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import adapterPackage from "../apps/alert-adapter/package.json" with { type: "json" };
 import type { DeduplicationStore } from "../apps/alert-adapter/src/deduplication.js";
 import {
   createGitHubAppJwt,
@@ -12,6 +13,40 @@ import {
   alertDeduplicationKey,
   normalizeAlert,
 } from "../apps/alert-adapter/src/normalize.js";
+import lockfile from "../package-lock.json" with { type: "json" };
+
+describe("Azure alert adapter dependency pin", () => {
+  it("keeps Identity on its supported MSAL Node 3.x dependency chain", () => {
+    expect(adapterPackage.dependencies["@azure/identity"]).toBe("4.13.0");
+    expect(
+      lockfile.packages["apps/alert-adapter"].dependencies["@azure/identity"],
+    ).toBe("4.13.0");
+    const identityPackages = Object.entries(lockfile.packages).filter(
+      ([path]) => path.endsWith("node_modules/@azure/identity"),
+    );
+    expect(identityPackages.length).toBeGreaterThan(0);
+    for (const [, entry] of identityPackages) {
+      expect(entry).toMatchObject({
+        version: "4.13.0",
+        dependencies: { "@azure/msal-node": "^3.5.0" },
+      });
+    }
+  });
+
+  it("does not restore the MSAL Node chain affected by GHSA-xcx6-jx8p-x3h5", () => {
+    const msalPackages = Object.entries(lockfile.packages).filter(([path]) =>
+      path.endsWith("node_modules/@azure/msal-node"),
+    );
+
+    expect(msalPackages.length).toBeGreaterThan(0);
+    for (const [, entry] of msalPackages) {
+      if (!("version" in entry)) {
+        throw new Error("Expected the locked MSAL Node version.");
+      }
+      expect(entry.version).toMatch(/^3\.\d+\.\d+$/);
+    }
+  });
+});
 
 const commonPayload = {
   schemaId: "azureMonitorCommonAlertSchema",
